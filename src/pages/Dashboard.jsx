@@ -32,17 +32,11 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* WELCOME */}
-      <div style={{ background: '#1A1F26', border: '1px solid #2A2F36', borderRadius: 8, padding: 32, textAlign: 'center' }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>🚀</div>
-        <h2 style={{ fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: 700, color: '#E5E7EB', marginBottom: 8 }}>ORVIAN está funcionando</h2>
-        <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
-          Bienvenido {session?.user?.email}. El sistema está conectado a Supabase y listo para cargar datos reales.
-        </p>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <div style={{ background: 'rgba(63,169,245,0.1)', border: '1px solid rgba(63,169,245,0.2)', borderRadius: 5, padding: '6px 14px', fontSize: 12, color: '#3FA9F5' }}>✓ React funcionando</div>
-          <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 5, padding: '6px 14px', fontSize: 12, color: '#22C55E' }}>✓ Supabase conectado</div>
-          <div style={{ background: 'rgba(63,169,245,0.1)', border: '1px solid rgba(63,169,245,0.2)', borderRadius: 5, padding: '6px 14px', fontSize: 12, color: '#3FA9F5' }}>✓ Auth funcionando</div>
+      {/* ÚLTIMOS VIAJES EN CURSO */}
+      <div style={{ background: '#1A1F26', border: '1px solid #2A2F36', borderRadius: 8, padding: 24 }}>
+        <h2 style={{ fontFamily: 'Space Grotesk', fontSize: 16, fontWeight: 700, color: '#E5E7EB', marginBottom: 16 }}>Operativa Reciente</h2>
+        <div style={{ color: '#9CA3AF', fontSize: 13 }}>
+          Aquí se proyectará el radar en vivo de tus operaciones, mapas de calor, y alertas de demanda predictiva a medida que escalemos al Plan Business. El sistema está 100% vital y conectado a la base de datos Supabase recogiendo telemetría.
         </div>
       </div>
     </div>

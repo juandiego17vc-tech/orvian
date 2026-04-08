@@ -12,6 +12,7 @@ import Configuracion from './pages/Configuracion'
 
 import Tarifario from './pages/Tarifario'
 import Liquidaciones from './pages/Liquidaciones'
+import Proveedores from './pages/Proveedores'
 
 const queryClient = new QueryClient()
 
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="viajes" element={<Viajes />} />
               <Route path="tarifario" element={<Tarifario />} />
               <Route path="liquidaciones" element={<Liquidaciones />} />
+              <Route path="proveedores" element={<Proveedores />} />
               <Route path="clientes" element={<Clientes />} />
               <Route path="choferes" element={<Choferes />} />
               <Route path="finanzas" element={<Finanzas />} />

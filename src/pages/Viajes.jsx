@@ -30,7 +30,8 @@ export default function Viajes() {
   const [precio, setPrecio] = useState('')
   const [validacionManual, setValidacionManual] = useState(false)
   const [tipoServicio, setTipoServicio] = useState('Propio')
-  const [proveedorNombre, setProveedorNombre] = useState('')
+  const [proveedorId, setProveedorId] = useState('')
+  const [proveedoresList, setProveedoresList] = useState([])
   const [costoProveedor, setCostoProveedor] = useState('')
   const [moneda, setMoneda] = useState('ARS')
   const [formaPago, setFormaPago] = useState('Efectivo')
@@ -49,8 +50,14 @@ export default function Viajes() {
       fetchViajes()
       fetchClientesList()
       fetchTarifasList()
+      fetchProveedoresList()
     }
   }, [tenantId])
+
+  const fetchProveedoresList = async () => {
+    const { data } = await supabase.from('proveedores').select('id, nombre_fantasia').order('nombre_fantasia', { ascending: true })
+    if (data) setProveedoresList(data)
+  }
 
   const fetchTarifasList = async () => {
     const { data } = await supabase.from('tarifario').select('*').order('nombre_servicio', { ascending: true })
@@ -79,7 +86,8 @@ export default function Viajes() {
       .select(`
         *,
         clientes(nombre_completo, telefono),
-        choferes(nombre_completo, vehiculo_placa, vehiculo_modelo)
+        choferes(nombre_completo, vehiculo_placa, vehiculo_modelo),
+        proveedores(nombre_fantasia)
       `)
       .order('created_at', { ascending: false })
     
@@ -177,8 +185,8 @@ export default function Viajes() {
         quien_cobro: quienCobro,
       }
 
-      if (tipoServicio === 'Tercerizado') {
-        payload.proveedor_nombre = proveedorNombre
+      if (tipoServicio !== 'Propio') {
+        payload.proveedor_id = proveedorId || null
         payload.costo_proveedor = costoProveedor ? parseFloat(costoProveedor) : null
       }
 
@@ -190,7 +198,7 @@ export default function Viajes() {
       setModoCliente('existente')
       setClienteNombre(''); setClienteTelefono(''); setClienteSearch(''); setShowClientDropdown(false);
       setOrigen(''); setDestino(''); setPrecio(''); setFecha(''); setValidacionManual(false); setTarifaSeleccionadaId('');
-      setTipoServicio('Propio'); setProveedorNombre(''); setCostoProveedor(''); 
+      setTipoServicio('Propio'); setProveedorId(''); setCostoProveedor(''); 
       setMoneda('ARS'); setFormaPago('Efectivo'); setQuienCobro('Agencia');
       
       fetchViajes()
@@ -293,7 +301,9 @@ export default function Viajes() {
                       <td style={{ padding: '14px 16px', fontWeight: 500 }}>
                         {v.clientes?.nombre_completo}
                         <div style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>
-                          {v.tipo_servicio === 'Tercerizado' ? `🏢 Subcontrata a: ${v.proveedor_nombre}` : '🚙 Flota Propia'}
+                          {v.tipo_servicio === 'Tercerizado' && `📤 Subcontrata: ${v.proveedores?.nombre_fantasia || 'Agencia'}`}
+                          {v.tipo_servicio === 'B2B' && `📥 Pedido B2B: ${v.proveedores?.nombre_fantasia || 'Agencia'}`}
+                          {v.tipo_servicio === 'Propio' && '🚙 Flota Propia'}
                         </div>
                       </td>
                       <td style={{ padding: '14px 16px', color: '#9CA3AF' }}>
@@ -542,7 +552,10 @@ export default function Viajes() {
                        </label>
                        <div style={{ position: 'relative' }}>
                          <Building size={16} color={tipoServicio === 'B2B' ? '#F59E0B' : '#EF4444'} style={{ position: 'absolute', left: 10, top: 12 }} />
-                         <input type="text" required value={proveedorNombre} onChange={(e) => setProveedorNombre(e.target.value)} style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }} />
+                         <select required value={proveedorId} onChange={(e) => setProveedorId(e.target.value)} style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none', appearance: 'none' }}>
+                           <option value="">Selecciona Proveedor...</option>
+                           {proveedoresList.map(p => <option key={p.id} value={p.id}>{p.nombre_fantasia}</option>)}
+                         </select>
                        </div>
                      </div>
                      <div style={{ flex: 1 }}>

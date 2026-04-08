@@ -6,8 +6,9 @@ const navItems = [
   { to: '/viajes', label: 'Viajes', icon: '↗' },
   { to: '/tarifario', label: 'Tarifario', icon: '☰' },
   { to: '/liquidaciones', label: 'Nómina', icon: '◫' },
-  { to: '/clientes', label: 'Clientes', icon: '◎' },
   { to: '/choferes', label: 'Choferes', icon: '◈' },
+  { to: '/clientes', label: 'Clientes', icon: '◎' },
+  { to: '/proveedores', label: 'Bóveda B2B', icon: '◫' },
   { to: '/finanzas', label: 'Reportes', icon: '◫' },
   { to: '/configuracion', label: 'Configuración', icon: '◻' },
 ]
