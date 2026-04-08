@@ -38,12 +38,14 @@ export default function Choferes() {
       setChoferEditando(chofer)
       setNombre(chofer.nombre_completo)
       setPlaca(chofer.vehiculo_placa || '')
+      setComision(chofer.comision_porcentaje || 33)
       setDisponibilidad(chofer.disponibilidad)
       setEstadoCuenta(chofer.estado)
     } else {
       setChoferEditando(null)
       setNombre('')
       setPlaca('')
+      setComision(33)
       setDisponibilidad('Disponible')
       setEstadoCuenta('Activo')
     }
@@ -63,6 +65,7 @@ export default function Choferes() {
           .update({
             nombre_completo: nombre,
             vehiculo_placa: placa || null,
+            comision_porcentaje: comision,
             disponibilidad: disponibilidad,
             estado: estadoCuenta
           })
@@ -76,6 +79,7 @@ export default function Choferes() {
             tenant_id: tenantId,
             nombre_completo: nombre,
             vehiculo_placa: placa || null,
+            comision_porcentaje: comision,
             disponibilidad: disponibilidad,
             estado: 'Activo'
           }])
@@ -225,15 +229,27 @@ export default function Choferes() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Matrícula / Placa del Vehículo</label>
-                <div style={{ position: 'relative' }}>
-                  <Hash size={16} color="#9CA3AF" style={{ position: 'absolute', left: 10, top: 12 }} />
-                  <input 
-                    type="text" value={placa} onChange={e => setPlaca(e.target.value.toUpperCase())}
-                    placeholder="ABC 123"
-                    style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
-                  />
+              <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Matrícula / Placa del Vehículo</label>
+                  <div style={{ position: 'relative' }}>
+                    <Hash size={16} color="#9CA3AF" style={{ position: 'absolute', left: 10, top: 12 }} />
+                    <input 
+                      type="text" value={placa} onChange={e => setPlaca(e.target.value.toUpperCase())}
+                      placeholder="ABC 123"
+                      style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>% Comisión Inicial</label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 10, top: 10, color: '#9CA3AF', fontSize: 14 }}>%</span>
+                    <input 
+                      type="number" required value={comision} onChange={e => setComision(e.target.value)}
+                      style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
+                    />
+                  </div>
                 </div>
               </div>
 
