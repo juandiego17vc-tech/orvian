@@ -5,9 +5,10 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: '⬡' },
   { to: '/viajes', label: 'Viajes', icon: '↗' },
   { to: '/tarifario', label: 'Tarifario', icon: '☰' },
+  { to: '/liquidaciones', label: 'Nómina', icon: '◫' },
   { to: '/clientes', label: 'Clientes', icon: '◎' },
   { to: '/choferes', label: 'Choferes', icon: '◈' },
-  { to: '/finanzas', label: 'Finanzas', icon: '◫' },
+  { to: '/finanzas', label: 'Reportes', icon: '◫' },
   { to: '/configuracion', label: 'Configuración', icon: '◻' },
 ]
 

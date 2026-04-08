@@ -11,6 +11,7 @@ import Finanzas from './pages/Finanzas'
 import Configuracion from './pages/Configuracion'
 
 import Tarifario from './pages/Tarifario'
+import Liquidaciones from './pages/Liquidaciones'
 
 const queryClient = new QueryClient()
 
@@ -31,6 +32,7 @@ export default function App() {
               <Route index element={<Dashboard />} />
               <Route path="viajes" element={<Viajes />} />
               <Route path="tarifario" element={<Tarifario />} />
+              <Route path="liquidaciones" element={<Liquidaciones />} />
               <Route path="clientes" element={<Clientes />} />
               <Route path="choferes" element={<Choferes />} />
               <Route path="finanzas" element={<Finanzas />} />
