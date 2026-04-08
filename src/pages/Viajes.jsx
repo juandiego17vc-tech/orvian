@@ -16,6 +16,8 @@ export default function Viajes() {
   const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState('')
   const [clienteNombre, setClienteNombre] = useState('')
   const [clienteTelefono, setClienteTelefono] = useState('')
+  const [clienteSearch, setClienteSearch] = useState('')
+  const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [origen, setOrigen] = useState('')
   const [destino, setDestino] = useState('')
   const [precio, setPrecio] = useState('')
@@ -170,6 +172,8 @@ export default function Viajes() {
       setIsModalOpen(false)
       setClienteNombre('')
       setClienteTelefono('')
+      setClienteSearch('')
+      setShowClientDropdown(false)
       setOrigen('')
       setDestino('')
       setPrecio('')
@@ -315,14 +319,46 @@ export default function Viajes() {
                 </div>
                 
                 {modoCliente === 'existente' && clientesList.length > 0 ? (
-                  <select 
-                    required value={clienteSeleccionadoId} onChange={e => setClienteSeleccionadoId(e.target.value)}
-                    style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none', appearance: 'none' }}
-                  >
-                    {clientesList.map(c => (
-                      <option key={c.id} value={c.id}>{c.nombre_completo} {c.telefono ? `- ${c.telefono}` : ''}</option>
-                    ))}
-                  </select>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text" 
+                      required 
+                      value={clienteSearch} 
+                      onChange={e => {
+                        setClienteSearch(e.target.value)
+                        setClienteSeleccionadoId('') // Reset ID until they select one
+                        setShowClientDropdown(true)
+                      }}
+                      onFocus={() => setShowClientDropdown(true)}
+                      placeholder="Escribe para buscar cliente..."
+                      style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none' }}
+                    />
+                    {showClientDropdown && clienteSearch.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: '#1A1F26', border: '1px solid #2A2F36', borderRadius: 6, maxHeight: 150, overflowY: 'auto', zIndex: 10 }}>
+                        {clientesList.filter(c => 
+                            c.nombre_completo.toLowerCase().includes(clienteSearch.toLowerCase()) || 
+                            (c.telefono && c.telefono.includes(clienteSearch))
+                          ).map(c => (
+                          <div 
+                            key={c.id} 
+                            onClick={() => {
+                              setClienteSeleccionadoId(c.id)
+                              setClienteSearch(`${c.nombre_completo}${c.telefono ? ` - ${c.telefono}` : ''}`)
+                              setShowClientDropdown(false)
+                            }}
+                            style={{ padding: '10px 12px', color: '#E5E7EB', cursor: 'pointer', borderBottom: '1px solid #2A2F36', fontSize: 13 }}
+                            onMouseOver={(e) => e.target.style.background = 'rgba(63,169,245,0.1)'}
+                            onMouseOut={(e) => e.target.style.background = 'transparent'}
+                          >
+                            <strong>{c.nombre_completo}</strong> {c.telefono ? `- ${c.telefono}` : ''}
+                          </div>
+                        ))}
+                        {clientesList.filter(c => c.nombre_completo.toLowerCase().includes(clienteSearch.toLowerCase())).length === 0 && (
+                          <div style={{ padding: '10px 12px', color: '#9CA3AF', fontSize: 13, fontStyle: 'italic' }}>No hay coincidencias.</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', gap: 12 }}>
                     <input 

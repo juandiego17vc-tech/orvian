@@ -158,8 +158,8 @@ export default function Tarifario() {
         alert(`¡Boom! Se inyectaron ${dataToInsert.length} tarifas directo desde tu Excel de forma nativa.`)
         fetchTarifas()
       } catch (err) {
-        console.error(err)
-        alert('Hubo un error procesando el Excel. Asegúrate de que el documento no esté bloqueado o corrupto.')
+        console.error("Detalle del error:", err)
+        alert('Hubo un error procesando el Excel: ' + (err.message || 'Archivo ilegible. Re-guarda como .xlsx puro.'))
       } finally {
         setIsSubmitting(false)
         e.target.value = null // reset
