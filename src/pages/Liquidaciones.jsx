@@ -68,17 +68,18 @@ export default function Liquidaciones() {
   }
 
   // Lógica Matemática Principal
-  const totalViajesARS = viajesPorLiquidar.filter(v => v.moneda === 'ARS').reduce((acc, v) => acc + (v.precio_estimado || 0), 0)
-  const totalViajesUSD = viajesPorLiquidar.filter(v => v.moneda === 'U$D').reduce((acc, v) => acc + (v.precio_estimado || 0), 0)
+  // Para viajes B2B (Inbound), comisionamos sobre el COSTO PROVEEDOR (Nuestra Tarifa Neta), no sobre el precio final inflado.
+  const totalBaseComisionableARS = viajesPorLiquidar.filter(v => v.moneda === 'ARS').reduce((acc, v) => acc + (v.tipo_servicio === 'B2B' ? (v.costo_proveedor || 0) : (v.precio_estimado || 0)), 0)
+  const totalBaseComisionableUSD = viajesPorLiquidar.filter(v => v.moneda === 'U$D').reduce((acc, v) => acc + (v.tipo_servicio === 'B2B' ? (v.costo_proveedor || 0) : (v.precio_estimado || 0)), 0)
   
-  const totalUSDenPesos = totalViajesUSD * tcUsd
-  const totalCombinadoARS = totalViajesARS + totalUSDenPesos
+  const totalUSDenPesos = totalBaseComisionableUSD * tcUsd
+  const totalCombinadoARS = totalBaseComisionableARS + totalUSDenPesos
 
-  // Comisión a favor del chofer
+  // Comisión a favor del chofer (So bre la base comisionable real)
   const comisionChoferBRUTO = totalCombinadoARS * (pctComision / 100)
 
   // Descontar lo que el Chofer YA se quedó en mano
-  // (Si Quien Cobró = Chofer, es dinero que él ya tiene en su bolsillo y se le descuenta de lo que le debe la Agencia)
+  // (El chofer recauda el PRECIO FINAL físico del pasajero, sin importar si es B2B o propio)
   const cobradoPorChoferARS = viajesPorLiquidar.filter(v => v.quien_cobro === 'Chofer' && v.moneda === 'ARS').reduce((acc, v) => acc + (v.precio_estimado || 0), 0)
   const cobradoPorChoferUSD = viajesPorLiquidar.filter(v => v.quien_cobro === 'Chofer' && v.moneda === 'U$D').reduce((acc, v) => acc + (v.precio_estimado || 0), 0)
   const totalYaCobradoPorChofer = cobradoPorChoferARS + (cobradoPorChoferUSD * tcUsd)
@@ -193,12 +194,12 @@ export default function Liquidaciones() {
               {/* Tarjetas KPI de Recaudación */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                 <div style={{ background: '#1A1F26', border: '1px solid rgba(63, 169, 245, 0.3)', borderRadius: 8, padding: 16, textAlign: 'center' }}>
-                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Total Viajes ARS</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#3FA9F5' }}>${totalViajesARS.toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Base Liquidable ARS</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#3FA9F5' }}>${totalBaseComisionableARS.toLocaleString()}</div>
                 </div>
                 <div style={{ background: '#1A1F26', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: 8, padding: 16, textAlign: 'center' }}>
-                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Total Viajes USD</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#22C55E' }}>U$D {totalViajesUSD.toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Base Liquidable USD</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#22C55E' }}>U$D {totalBaseComisionableUSD.toLocaleString()}</div>
                 </div>
                 <div style={{ background: '#1A1F26', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: 8, padding: 16, textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Conversión a Pesos</div>
