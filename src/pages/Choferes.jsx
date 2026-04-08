@@ -14,6 +14,7 @@ export default function Choferes() {
   // Form State
   const [nombre, setNombre] = useState('')
   const [placa, setPlaca] = useState('')
+  const [comision, setComision] = useState(33)
   const [disponibilidad, setDisponibilidad] = useState('Disponible')
   const [estadoCuenta, setEstadoCuenta] = useState('Activo')
 
