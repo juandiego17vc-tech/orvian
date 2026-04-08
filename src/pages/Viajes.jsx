@@ -11,6 +11,9 @@ export default function Viajes() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Form State
+  const [modoCliente, setModoCliente] = useState('existente')
+  const [clientesList, setClientesList] = useState([])
+  const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState('')
   const [clienteNombre, setClienteNombre] = useState('')
   const [origen, setOrigen] = useState('')
   const [destino, setDestino] = useState('')
@@ -19,8 +22,21 @@ export default function Viajes() {
   const [validacionManual, setValidacionManual] = useState(false)
 
   useEffect(() => {
-    if (tenantId) fetchViajes()
+    if (tenantId) {
+      fetchViajes()
+      fetchClientesList()
+    }
   }, [tenantId])
+
+  const fetchClientesList = async () => {
+    const { data } = await supabase.from('clientes').select('id, nombre_completo').order('nombre_completo', { ascending: true })
+    if (data && data.length > 0) {
+      setClientesList(data)
+      setClienteSeleccionadoId(data[0].id)
+    } else {
+      setModoCliente('nuevo')
+    }
+  }
 
   const fetchViajes = async () => {
     setLoading(true)
@@ -43,21 +59,25 @@ export default function Viajes() {
     setIsSubmitting(true)
 
     try {
-      // 1. Crear el cliente rápido
-      const { data: cliente, error: cliError } = await supabase
-        .from('clientes')
-        .insert([{ nombre_completo: clienteNombre, tenant_id: tenantId }])
-        .select()
-        .single()
+      let finalClienteId = clienteSeleccionadoId
 
-      if (cliError) throw cliError
+      if (modoCliente === 'nuevo') {
+        const { data: cliente, error: cliError } = await supabase
+          .from('clientes')
+          .insert([{ nombre_completo: clienteNombre, tenant_id: tenantId }])
+          .select()
+          .single()
+
+        if (cliError) throw cliError
+        finalClienteId = cliente.id
+      }
 
       // 2. Crear el viaje asociado a ese cliente
       const { error: viajeError } = await supabase
         .from('viajes')
         .insert([{
           tenant_id: tenantId,
-          cliente_id: cliente.id,
+          cliente_id: finalClienteId,
           origen,
           destino,
           precio_estimado: precio ? parseFloat(precio) : null,
@@ -78,6 +98,7 @@ export default function Viajes() {
       
       // Refresh list
       fetchViajes()
+      fetchClientesList()
     } catch (err) {
       console.error(err)
       alert("Hubo un error al crear el viaje")
@@ -192,12 +213,33 @@ export default function Viajes() {
             <form onSubmit={handleSubmit} style={{ padding: 20 }}>
               
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Nombre del Cliente</label>
-                <input 
-                  type="text" required value={clienteNombre} onChange={e => setClienteNombre(e.target.value)}
-                  placeholder="Ej. Juan Pérez"
-                  style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none' }}
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label style={{ fontSize: 12, color: '#9CA3AF' }}>Cliente</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setModoCliente(modoCliente === 'existente' ? 'nuevo' : 'existente')} 
+                    style={{ fontSize: 11, background: 'none', border: 'none', color: '#3FA9F5', cursor: 'pointer', padding: 0 }}
+                  >
+                    {modoCliente === 'existente' ? '+ Crear Nuevo Cliente' : 'Seleccionar Existente'}
+                  </button>
+                </div>
+                
+                {modoCliente === 'existente' && clientesList.length > 0 ? (
+                  <select 
+                    required value={clienteSeleccionadoId} onChange={e => setClienteSeleccionadoId(e.target.value)}
+                    style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none', appearance: 'none' }}
+                  >
+                    {clientesList.map(c => (
+                      <option key={c.id} value={c.id}>{c.nombre_completo}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input 
+                    type="text" required value={clienteNombre} onChange={e => setClienteNombre(e.target.value)}
+                    placeholder="Escribe el nombre del cliente nuevo"
+                    style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none' }}
+                  />
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
