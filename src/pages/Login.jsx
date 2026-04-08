@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { signIn } = useAuth()
@@ -55,14 +57,23 @@ export default function Login() {
           </div>
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 11, color: '#9CA3AF', marginBottom: 5, fontWeight: 500 }}>Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Tu contraseña"
-              required
-              style={{ width: '100%', background: '#21272F', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', fontSize: 13, color: '#E5E7EB', outline: 'none', fontFamily: 'Inter' }}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Tu contraseña"
+                required
+                style={{ width: '100%', background: '#21272F', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 40px 10px 12px', fontSize: 13, color: '#E5E7EB', outline: 'none', fontFamily: 'Inter' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#6B7280', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 5, padding: '8px 12px', color: '#EF4444', fontSize: 12, marginBottom: 14 }}>{error}</div>}
           <button
