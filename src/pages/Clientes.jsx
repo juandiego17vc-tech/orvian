@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, User, Phone, Check, X, Users, Tag } from 'lucide-react'
+import { Plus, User, Phone, Check, X, Users, Tag, Edit2, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -9,6 +9,7 @@ export default function Clientes() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [clienteEditando, setClienteEditando] = useState(null)
 
   // Form State
   const [nombre, setNombre] = useState('')
@@ -30,36 +31,70 @@ export default function Clientes() {
     setLoading(false)
   }
 
+  const handleOpenForm = (cliente = null) => {
+    if (cliente) {
+      setClienteEditando(cliente)
+      setNombre(cliente.nombre_completo)
+      setTelefono(cliente.telefono || '')
+      setSegmento(cliente.segmento || 'Nuevo')
+    } else {
+      setClienteEditando(null)
+      setNombre('')
+      setTelefono('')
+      setSegmento('Nuevo')
+    }
+    setIsModalOpen(true)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!tenantId) return
     setIsSubmitting(true)
 
     try {
-      const { error } = await supabase
-        .from('clientes')
-        .insert([{
-          tenant_id: tenantId,
-          nombre_completo: nombre,
-          telefono: telefono || null,
-          segmento: segmento
-        }])
+      if (clienteEditando) {
+        // Actualizar
+        const { error } = await supabase
+          .from('clientes')
+          .update({
+            nombre_completo: nombre,
+            telefono: telefono || null,
+            segmento: segmento
+          })
+          .eq('id', clienteEditando.id)
+        if (error) throw error
+      } else {
+        // Crear
+        const { error } = await supabase
+          .from('clientes')
+          .insert([{
+            tenant_id: tenantId,
+            nombre_completo: nombre,
+            telefono: telefono || null,
+            segmento: segmento
+          }])
+        if (error) throw error
+      }
 
-      if (error) throw error
-
-      // Reset form
       setIsModalOpen(false)
-      setNombre('')
-      setTelefono('')
-      setSegmento('Nuevo')
-      
-      // Refresh list
       fetchClientes()
     } catch (err) {
       console.error(err)
       alert("Hubo un error al guardar el cliente")
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (clienteId) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este cliente? Se borrarán o desvincularán sus viajes asociados.')) return
+    try {
+      const { error } = await supabase.from('clientes').delete().eq('id', clienteId)
+      if (error) throw error
+      fetchClientes()
+    } catch (err) {
+      console.error(err)
+      alert("Error al eliminar el cliente")
     }
   }
 
@@ -79,7 +114,7 @@ export default function Clientes() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: 700, color: '#E5E7EB' }}>Directorio de Clientes</h1>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => handleOpenForm(null)}
           style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3FA9F5', color: 'white', border: 'none', borderRadius: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter' }}
         >
           <Plus size={16} /> Agregar Cliente
@@ -102,7 +137,7 @@ export default function Clientes() {
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Nombre Completo</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Teléfono</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Segmento</th>
-                <th style={{ padding: '14px 16px', fontWeight: 500 }}>Antigüedad</th>
+                <th style={{ padding: '14px 16px', fontWeight: 500 }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -124,8 +159,15 @@ export default function Clientes() {
                         {c.segmento}
                       </span>
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#6B7280' }}>
-                      {new Date(c.created_at).toLocaleDateString('es-AR')}
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleOpenForm(c)} style={{ background: 'transparent', border: '1px solid #2A2F36', borderRadius: 6, padding: '6px', cursor: 'pointer', color: '#9CA3AF' }}>
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDelete(c.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 6, padding: '6px', cursor: 'pointer', color: '#F87171' }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -135,12 +177,14 @@ export default function Clientes() {
         )}
       </div>
 
-      {/* MODAL NUEVO CLIENTE */}
+      {/* MODAL CLIENTE */}
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
           <div style={{ background: '#1A1F26', border: '1px solid #2A2F36', borderRadius: 12, width: '100%', maxWidth: 450, overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #2A2F36', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: 700, color: '#E5E7EB' }}>Agregar Cliente</h2>
+              <h2 style={{ fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: 700, color: '#E5E7EB' }}>
+                {clienteEditando ? 'Modificar Cliente' : 'Agregar Cliente'}
+              </h2>
               <button 
                 onClick={() => setIsModalOpen(false)}
                 style={{ background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}

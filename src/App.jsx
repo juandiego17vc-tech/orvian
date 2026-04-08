@@ -10,6 +10,8 @@ import Choferes from './pages/Choferes'
 import Finanzas from './pages/Finanzas'
 import Configuracion from './pages/Configuracion'
 
+import Tarifario from './pages/Tarifario'
+
 const queryClient = new QueryClient()
 
 function PrivateRoute({ children }) {
@@ -28,6 +30,7 @@ export default function App() {
             <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="viajes" element={<Viajes />} />
+              <Route path="tarifario" element={<Tarifario />} />
               <Route path="clientes" element={<Clientes />} />
               <Route path="choferes" element={<Choferes />} />
               <Route path="finanzas" element={<Finanzas />} />
@@ -39,3 +42,4 @@ export default function App() {
     </QueryClientProvider>
   )
 }
+

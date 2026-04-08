@@ -22,7 +22,7 @@ export default function Finanzas() {
     // Obtenemos todos los viajes para calcular finanzas
     const { data: viajes, error } = await supabase
       .from('viajes')
-      .select('precio_estimado, validacion_precio_manual, origen, destino, created_at, clientes(nombre_completo)')
+      .select('precio_estimado, validacion_precio_manual, origen, destino, created_at, estado, clientes(nombre_completo)')
       .order('created_at', { ascending: false })
 
     if (viajes) {
@@ -30,6 +30,8 @@ export default function Finanzas() {
       let porCotizar = 0
       
       viajes.forEach(v => {
+        if (v.estado === 'Cancelado') return // No sumar dinero fantasma
+        
         if (v.precio_estimado && !v.validacion_precio_manual) {
           acumulado += parseFloat(v.precio_estimado)
         }

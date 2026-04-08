@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Check, X, CarFront, Hash, Info } from 'lucide-react'
+import { Plus, Check, X, CarFront, Hash, Info, Edit2, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -9,11 +9,13 @@ export default function Choferes() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [choferEditando, setChoferEditando] = useState(null)
 
   // Form State
   const [nombre, setNombre] = useState('')
   const [placa, setPlaca] = useState('')
   const [disponibilidad, setDisponibilidad] = useState('Disponible')
+  const [estadoCuenta, setEstadoCuenta] = useState('Activo')
 
   useEffect(() => {
     if (tenantId) fetchChoferes()
@@ -30,37 +32,74 @@ export default function Choferes() {
     setLoading(false)
   }
 
+  const handleOpenForm = (chofer = null) => {
+    if (chofer) {
+      setChoferEditando(chofer)
+      setNombre(chofer.nombre_completo)
+      setPlaca(chofer.vehiculo_placa || '')
+      setDisponibilidad(chofer.disponibilidad)
+      setEstadoCuenta(chofer.estado)
+    } else {
+      setChoferEditando(null)
+      setNombre('')
+      setPlaca('')
+      setDisponibilidad('Disponible')
+      setEstadoCuenta('Activo')
+    }
+    setIsModalOpen(true)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!tenantId) return
     setIsSubmitting(true)
 
     try {
-      const { error } = await supabase
-        .from('choferes')
-        .insert([{
-          tenant_id: tenantId,
-          nombre_completo: nombre,
-          vehiculo_placa: placa || null,
-          disponibilidad: disponibilidad,
-          estado: 'Activo' // Siempre activo por defecto al crearlo
-        }])
+      if (choferEditando) {
+        // Actualizar
+        const { error } = await supabase
+          .from('choferes')
+          .update({
+            nombre_completo: nombre,
+            vehiculo_placa: placa || null,
+            disponibilidad: disponibilidad,
+            estado: estadoCuenta
+          })
+          .eq('id', choferEditando.id)
+        if (error) throw error
+      } else {
+        // Crear
+        const { error } = await supabase
+          .from('choferes')
+          .insert([{
+            tenant_id: tenantId,
+            nombre_completo: nombre,
+            vehiculo_placa: placa || null,
+            disponibilidad: disponibilidad,
+            estado: 'Activo'
+          }])
+        if (error) throw error
+      }
 
-      if (error) throw error
-
-      // Reset form
       setIsModalOpen(false)
-      setNombre('')
-      setPlaca('')
-      setDisponibilidad('Disponible')
-      
-      // Refresh list
       fetchChoferes()
     } catch (err) {
       console.error(err)
       alert("Hubo un error al guardar al chofer")
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (choferId) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este chofer? Sus viajes asociados quedarán "sin chofer".')) return
+    try {
+      const { error } = await supabase.from('choferes').delete().eq('id', choferId)
+      if (error) throw error
+      fetchChoferes()
+    } catch (err) {
+      console.error(err)
+      alert("Error al eliminar el chofer")
     }
   }
 
@@ -79,7 +118,7 @@ export default function Choferes() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: 700, color: '#E5E7EB' }}>Gestión de Choferes</h1>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => handleOpenForm(null)}
           style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3FA9F5', color: 'white', border: 'none', borderRadius: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter' }}
         >
           <Plus size={16} /> Alta Chofer
@@ -103,6 +142,7 @@ export default function Choferes() {
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Patente / Placa</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Estado Cuenta</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Disponibilidad</th>
+                <th style={{ padding: '14px 16px', fontWeight: 500 }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -123,7 +163,7 @@ export default function Choferes() {
                         <span style={{ border: '1px dashed #3FA9F5', color: '#3FA9F5', padding: '2px 6px', borderRadius: 4, fontSize: 11, letterSpacing: '0.05em' }}>
                           {c.vehiculo_placa.toUpperCase()}
                         </span>
-                      ) : 'Vehículo no asignado'}
+                      ) : 'Sin asignar'}
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: c.estado === 'Activo' ? '#4ADE80' : '#EF4444' }}>
@@ -136,6 +176,16 @@ export default function Choferes() {
                         {c.disponibilidad}
                       </span>
                     </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleOpenForm(c)} style={{ background: 'transparent', border: '1px solid #2A2F36', borderRadius: 6, padding: '6px', cursor: 'pointer', color: '#9CA3AF' }}>
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDelete(c.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 6, padding: '6px', cursor: 'pointer', color: '#F87171' }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 )
               })}
@@ -144,12 +194,14 @@ export default function Choferes() {
         )}
       </div>
 
-      {/* MODAL ALTA CHOFER */}
+      {/* MODAL CHOFER */}
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
           <div style={{ background: '#1A1F26', border: '1px solid #2A2F36', borderRadius: 12, width: '100%', maxWidth: 450, overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #2A2F36', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: 700, color: '#E5E7EB' }}>Dar de Alta Chofer</h2>
+              <h2 style={{ fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: 700, color: '#E5E7EB' }}>
+                {choferEditando ? 'Modificar Chofer' : 'Dar de Alta Chofer'}
+              </h2>
               <button 
                 onClick={() => setIsModalOpen(false)}
                 style={{ background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}
@@ -184,19 +236,36 @@ export default function Choferes() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Disponibilidad Inicial</label>
-                <div style={{ position: 'relative' }}>
-                  <Info size={16} color="#9CA3AF" style={{ position: 'absolute', left: 10, top: 12 }} />
-                  <select 
-                    value={disponibilidad} onChange={e => setDisponibilidad(e.target.value)}
-                    style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none', appearance: 'none' }}
-                  >
-                    <option value="Disponible">Disponible (Listo para viajes)</option>
-                    <option value="Fuera de Turno">Fuera de Turno (Descansando / Fuera de horario)</option>
-                    <option value="En Viaje">En Viaje (Ocupado actualmente)</option>
-                  </select>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Disponibilidad</label>
+                  <div style={{ position: 'relative' }}>
+                    <Info size={16} color="#9CA3AF" style={{ position: 'absolute', left: 10, top: 12 }} />
+                    <select 
+                      value={disponibilidad} onChange={e => setDisponibilidad(e.target.value)}
+                      style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none', appearance: 'none' }}
+                    >
+                      <option value="Disponible">Disponible</option>
+                      <option value="Fuera de Turno">Fuera de Turno</option>
+                      <option value="En Viaje">En Viaje</option>
+                    </select>
+                  </div>
                 </div>
+
+                {choferEditando && (
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Estado Cuenta</label>
+                    <div style={{ position: 'relative' }}>
+                      <select 
+                        value={estadoCuenta} onChange={e => setEstadoCuenta(e.target.value)}
+                        style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none', appearance: 'none' }}
+                      >
+                        <option value="Activo">Activo (Permitido)</option>
+                        <option value="Inactivo">Inactivo (Suspendido)</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', borderTop: '1px solid #2A2F36', paddingTop: 16 }}>
@@ -210,7 +279,7 @@ export default function Choferes() {
                   type="submit" disabled={isSubmitting}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#3FA9F5', color: 'white', border: 'none', borderRadius: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
                 >
-                  {isSubmitting ? 'Registrando...' : <><Check size={16} /> Registrar Chofer</>}
+                  {isSubmitting ? 'Guardando...' : <><Check size={16} /> Guardar Chofer</>}
                 </button>
               </div>
 
