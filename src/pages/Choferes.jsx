@@ -8,6 +8,7 @@ export default function Choferes() {
   const [choferes, setChoferes] = useState([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalComentarios, setModalComentarios] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [choferEditando, setChoferEditando] = useState(null)
 
@@ -27,13 +28,15 @@ export default function Choferes() {
     setLoading(true)
     const { data, error } = await supabase
       .from('choferes')
-      .select('*, viajes(id, estado, encuestas(calificacion))')
+      .select('*, viajes(id, estado, encuestas(calificacion, comentario, created_at))')
       .order('created_at', { ascending: false })
     
     if (data) {
       const enriched = data.map(c => {
         let totalScore = 0;
         let count = 0;
+        let comentariosArr = [];
+
         if (c.viajes) {
           c.viajes.forEach(v => {
             if (v.encuestas && v.encuestas.length > 0) {
@@ -42,17 +45,28 @@ export default function Choferes() {
                   totalScore += e.calificacion;
                   count++;
                 }
+                if (e.comentario && e.comentario.trim().length > 0) {
+                  comentariosArr.push({
+                    calificacion: e.calificacion,
+                    texto: e.comentario,
+                    fecha: e.created_at
+                  });
+                }
               })
             }
           })
         }
         
+        // Ordenar comentarios por fecha descendente
+        comentariosArr.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
         // Determinar estado del viaje activo
         const activeTrip = c.viajes?.find(v => v.estado === 'En Curso' || v.estado === 'Pasajero a Bordo' || v.estado === 'Pendiente');
         c.estadoViajeActual = activeTrip ? activeTrip.estado : null;
         
         c.rating = count > 0 ? (totalScore / count).toFixed(1) : 'S/N';
         c.ratingCount = count;
+        c.comentariosNPS = comentariosArr;
         return c;
       })
       setChoferes(enriched)
@@ -196,7 +210,13 @@ export default function Choferes() {
                       </div>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: c.ratingCount > 0 ? '#F59E0B' : '#6B7280' }}>
+                      <div 
+                        onClick={() => c.ratingCount > 0 ? setModalComentarios(c) : null}
+                        title={c.ratingCount > 0 ? "Ver Comentarios NPS" : ""}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, color: c.ratingCount > 0 ? '#F59E0B' : '#6B7280', cursor: c.ratingCount > 0 ? 'pointer' : 'default', transition: '0.2s', padding: '4px', borderRadius: 6 }}
+                        onMouseOver={e => c.ratingCount > 0 ? e.currentTarget.style.background = 'rgba(245,158,11,0.1)' : null}
+                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                      >
                         <Star size={14} fill={c.ratingCount > 0 ? '#F59E0B' : 'transparent'} />
                         <span style={{ fontWeight: 700 }}>{c.rating}</span>
                         {c.ratingCount > 0 && <span style={{ fontSize: 11, color: '#6B7280' }}>({c.ratingCount})</span>}
@@ -366,6 +386,61 @@ export default function Choferes() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL COMENTARIOS NPS */}
+      {modalComentarios && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div style={{ background: '#1A1F26', border: '1px solid #3FA9F5', borderRadius: 12, width: '100%', maxWidth: 500, overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
+            
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #2A2F36', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#111827' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Space Grotesk', fontSize: 16, fontWeight: 700, color: '#E5E7EB', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Star size={16} fill="#F59E0B" color="#F59E0B" /> Comentarios NPS
+                </h2>
+                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>Conductor: <strong style={{ color: 'white' }}>{modalComentarios.nombre_completo}</strong></div>
+              </div>
+              <button 
+                onClick={() => setModalComentarios(null)}
+                style={{ background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div style={{ padding: 20, maxHeight: '60vh', overflowY: 'auto' }}>
+              {modalComentarios.comentariosNPS && modalComentarios.comentariosNPS.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {modalComentarios.comentariosNPS.map((c, idx) => (
+                    <div key={idx} style={{ background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 8, padding: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', gap: 2 }}>
+                          {[1,2,3,4,5].map(s => (
+                            <Star key={s} size={12} fill={s <= c.calificacion ? '#F59E0B' : 'transparent'} color={s <= c.calificacion ? '#F59E0B' : '#4B5563'} />
+                          ))}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#6B7280' }}>
+                          {new Date(c.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                      </div>
+                      <div style={{ color: '#D1D5DB', fontSize: 13, lineHeight: 1.5, fontStyle: 'italic' }}>
+                        "{c.texto}"
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 13, padding: '20px 0' }}>
+                  Este conductor tiene calificaciones, pero los pasajeros no dejaron ningún comentario escrito.
+                </div>
+              )}
+            </div>
+            
+            <div style={{ padding: 16, borderTop: '1px solid #2A2F36', textAlign: 'center' }}>
+               <button onClick={() => setModalComentarios(null)} style={{ background: '#374151', color: 'white', padding: '8px 24px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>Cerrar</button>
+            </div>
+            
           </div>
         </div>
       )}
