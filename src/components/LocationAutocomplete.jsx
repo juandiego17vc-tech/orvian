@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { MapPin } from 'lucide-react';
 
-export default function LocationAutocomplete({ value, onChange, placeholder, iconColor = "#3FA9F5", required = true }) {
+export default function LocationAutocomplete({ value, onChange, onSelectCoords, placeholder, iconColor = "#3FA9F5", required = true }) {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceRef = useRef(null);
@@ -36,6 +36,7 @@ export default function LocationAutocomplete({ value, onChange, placeholder, ico
   const handleSelect = (s) => {
     // Tomamos el display_name, podemos limpiarlo si es muy largo, pero por ahora tal cual.
     onChange(s.display_name);
+    if (onSelectCoords) onSelectCoords(s.lat, s.lon);
     setShowSuggestions(false);
   };
 

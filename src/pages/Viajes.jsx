@@ -22,6 +22,8 @@ export default function Viajes() {
   
   const [origen, setOrigen] = useState('')
   const [destino, setDestino] = useState('')
+  const [origenCoords, setOrigenCoords] = useState(null)
+  const [destinoCoords, setDestinoCoords] = useState(null)
   const [fecha, setFecha] = useState('')
   
   const [nombrePasajero, setNombrePasajero] = useState('')
@@ -577,14 +579,17 @@ export default function Viajes() {
                  <div style={{ flex: 1, zIndex: 101 }}>
                    <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>{tarifaSeleccionadaId ? 'Servicio / Origen' : 'Origen'}</label>
                    <LocationAutocomplete 
-                     value={origen} onChange={setOrigen} 
+                     value={origen} onChange={setOrigen} onSelectCoords={(lat, lon) => setOrigenCoords(`${lon},${lat}`)}
                      placeholder="Ej. Obelisco, Buenos Aires" iconColor="#3FA9F5" 
                    />
                  </div>
                  {!tarifaSeleccionadaId && (
                     <button 
                       type="button"
-                      onClick={() => { const tmp = origen; setOrigen(destino); setDestino(tmp); }}
+                      onClick={() => { 
+                        const tmp = origen; setOrigen(destino); setDestino(tmp); 
+                        const tmpC = origenCoords; setOrigenCoords(destinoCoords); setDestinoCoords(tmpC);
+                      }}
                       title="Intercambiar Origen y Destino"
                       style={{ marginTop: 24, background: '#1A1F26', border: '1px solid #3FA9F5', borderRadius: '50%', color: '#3FA9F5', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
                     >
@@ -595,7 +600,7 @@ export default function Viajes() {
                    <div style={{ flex: 1, zIndex: 100 }}>
                      <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Destino</label>
                      <LocationAutocomplete 
-                       value={destino} onChange={setDestino} 
+                       value={destino} onChange={setDestino} onSelectCoords={(lat, lon) => setDestinoCoords(`${lon},${lat}`)}
                        placeholder="Ej. Aeropuerto Ezeiza" iconColor="#22C55E" 
                      />
                    </div>
@@ -610,15 +615,22 @@ export default function Viajes() {
                        const btn = document.getElementById('btn-cotizar');
                        btn.innerText = 'Calculando...';
                        try {
-                         const reqOrg = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(origen)}`);
-                         const dataOrg = await reqOrg.json();
-                         const reqDst = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino)}`);
-                         const dataDst = await reqDst.json();
+                         let routeC_org = origenCoords;
+                         let routeC_dst = destinoCoords;
+
+                         if (!routeC_org) {
+                           const reqOrg = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(origen)}&limit=1&countrycodes=ar`);
+                           const dataOrg = await reqOrg.json();
+                           if(dataOrg.length > 0) routeC_org = `${dataOrg[0].lon},${dataOrg[0].lat}`;
+                         }
+                         if (!routeC_dst) {
+                           const reqDst = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino)}&limit=1&countrycodes=ar`);
+                           const dataDst = await reqDst.json();
+                           if(dataDst.length > 0) routeC_dst = `${dataDst[0].lon},${dataDst[0].lat}`;
+                         }
                          
-                         if(dataOrg.length > 0 && dataDst.length > 0) {
-                           const orgCoords = `${dataOrg[0].lon},${dataOrg[0].lat}`;
-                           const dstCoords = `${dataDst[0].lon},${dataDst[0].lat}`;
-                           const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${orgCoords};${dstCoords}?overview=false`);
+                         if(routeC_org && routeC_dst) {
+                           const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${routeC_org};${routeC_dst}?overview=false`);
                            const routeData = await route.json();
                            
                            if(routeData.routes && routeData.routes.length > 0) {
