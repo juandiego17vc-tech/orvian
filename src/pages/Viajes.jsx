@@ -145,7 +145,7 @@ export default function Viajes() {
 
       if (manageChoferId) {
         let nuevaDispo = 'Disponible'
-        if (manageEstado === 'En Curso') nuevaDispo = 'En Viaje'
+        if (manageEstado === 'En Curso' || manageEstado === 'Pasajero a Bordo') nuevaDispo = 'En Viaje'
         await supabase.from('choferes').update({ disponibilidad: nuevaDispo }).eq('id', manageChoferId)
       }
 
@@ -886,6 +886,7 @@ export default function Viajes() {
                     <option value="Ofrecido">Ofrecido (Esperando Aceptación Chofer)</option>
                     <option value="Pendiente">Pendiente de Ejecución / Asignado</option>
                     <option value="En Curso">En Curso</option>
+                    <option value="Pasajero a Bordo">Pasajero a Bordo</option>
                     <option value="Finalizado">Finalizado (Listo p/ liquidar)</option>
                     <option value="Cancelado">Cancelado</option>
                   </select>
