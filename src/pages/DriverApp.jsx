@@ -61,8 +61,48 @@ export default function DriverApp() {
     setLoading(false)
   }
 
+  const validateTripOverlap = (tripDateStr) => {
+    if (!tripDateStr) return { allowed: true }
+    const newDate = new Date(tripDateStr).getTime()
+    
+    const booked = viajes.filter(v => v.estado !== 'Ofrecido' && v.estado !== 'Cancelado' && v.estado !== 'Liquidado' && v.estado !== 'Finalizado')
+    
+    let isWarning = false
+    for (let rt of booked) {
+      if (!rt.fecha_programada) continue
+      const rtDate = new Date(rt.fecha_programada).getTime()
+      const diffHrs = Math.abs(newDate - rtDate) / (1000 * 60 * 60)
+      
+      if (diffHrs < 1) {
+        return { 
+          allowed: false, 
+          msg: `🚫 SISTEMA BLOQUEADO: No puedes tomar este viaje. Tienes otro viaje programado demasiado cerca (${new Date(rt.fecha_programada).toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', hour12: false})} hs). El sistema de Orvian exige al menos 1 hora de margen entre servicios de la flota.` 
+        }
+      }
+      if (diffHrs < 2) {
+        isWarning = true
+      }
+    }
+    
+    if (isWarning) {
+      return {
+        allowed: true,
+        warningMsg: "⚠️ ALERTA LOGÍSTICA: Tienes un viaje reservado a menos de 2 horas de diferencia de esta nueva reserva. \n\n¿Estás ABSOLUTAMENTE SEGURO de que te dará el tiempo de cumplir con ambos compromisos sin ocasionar demoras al cliente?"
+      }
+    }
+    
+    return { allowed: true }
+  }
+
   const handleReclamarViaje = async (viajeId) => {
-    if (!window.confirm("¿Estás seguro de reclamar y hacerte cargo de este viaje? Al aceptar, el sistema te lo adjudicará a ti de inmediato.")) return
+    const trip = viajesBolsa.find(v => v.id === viajeId)
+    if (trip && trip.fecha_programada) {
+      const val = validateTripOverlap(trip.fecha_programada)
+      if (!val.allowed) return alert(val.msg)
+      if (val.warningMsg && !window.confirm(val.warningMsg)) return
+    }
+
+    if (!window.confirm("⚡ ¿Estás seguro de reclamar y hacerte cargo de este viaje? Al confirmar, el sistema lo adjudicará exclusivamente a ti.")) return
     
     setLoading(true)
     const { error } = await supabase.rpc('rpc_reclamar_viaje', { 
@@ -80,6 +120,15 @@ export default function DriverApp() {
   }
 
   const handleUpdateStatus = async (viajeId, nuevoEstado) => {
+    if (nuevoEstado === 'Pendiente') {
+      const trip = viajes.find(v => v.id === viajeId)
+      if (trip && trip.estado === 'Ofrecido' && trip.fecha_programada) {
+        const val = validateTripOverlap(trip.fecha_programada)
+        if (!val.allowed) return alert(val.msg)
+        if (val.warningMsg && !window.confirm(val.warningMsg)) return
+      }
+    }
+
     if (!window.confirm(`¿Confirmas que el viaje pasa a estado: ${nuevoEstado}?`)) return
     
     setViajes(viajes.map(v => v.id === viajeId ? { ...v, estado: nuevoEstado } : v))
