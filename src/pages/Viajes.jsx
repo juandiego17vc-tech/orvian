@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle, Users, RefreshCw } from 'lucide-react'
+import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle, Users, RefreshCw, ArrowDownUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import LocationAutocomplete from '../components/LocationAutocomplete'
@@ -23,6 +23,10 @@ export default function Viajes() {
   const [origen, setOrigen] = useState('')
   const [destino, setDestino] = useState('')
   const [fecha, setFecha] = useState('')
+  
+  const [nombrePasajero, setNombrePasajero] = useState('')
+  const [pasajerosQty, setPasajerosQty] = useState(1)
+  const [valijasQty, setValijasQty] = useState(0)
   
   const [tarifasList, setTarifasList] = useState([])
   const [tarifaSeleccionadaId, setTarifaSeleccionadaId] = useState('')
@@ -172,6 +176,12 @@ export default function Viajes() {
         finalClienteId = cliente.id
       }
 
+      let finalNombrePasajero = nombrePasajero
+      if (pasajerosQty > 1 || valijasQty > 0) {
+          if(!finalNombrePasajero) finalNombrePasajero = 'Pasajero'
+          finalNombrePasajero += ` [${pasajerosQty} Pasajeros, ${valijasQty} Valijas]`
+      }
+
       const payload = {
         tenant_id: tenantId,
         cliente_id: finalClienteId,
@@ -185,6 +195,7 @@ export default function Viajes() {
         moneda,
         forma_pago: formaPago,
         quien_cobro: quienCobro,
+        nombre_pasajero: finalNombrePasajero || null,
       }
 
       if (tipoServicio !== 'Propio') {
@@ -200,6 +211,7 @@ export default function Viajes() {
       setModoCliente('existente')
       setClienteNombre(''); setClienteTelefono(''); setClienteSearch(''); setShowClientDropdown(false);
       setOrigen(''); setDestino(''); setPrecio(''); setFecha(''); setValidacionManual(false); setTarifaSeleccionadaId('');
+      setNombrePasajero(''); setPasajerosQty(1); setValijasQty(0);
       setTipoServicio('Propio'); setProveedorId(''); setCostoProveedor(''); 
       setMoneda('ARS'); setFormaPago('Efectivo'); setQuienCobro('Agencia');
       
@@ -554,7 +566,7 @@ export default function Viajes() {
                )}
 
                {/* SECCIÓN MAPAS Y RUTEO */}
-               <div style={{ display: 'flex', gap: 12 }}>
+               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                  <div style={{ flex: 1, zIndex: 101 }}>
                    <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>{tarifaSeleccionadaId ? 'Servicio / Origen' : 'Origen'}</label>
                    <LocationAutocomplete 
@@ -562,6 +574,16 @@ export default function Viajes() {
                      placeholder="Ej. Obelisco, Buenos Aires" iconColor="#3FA9F5" 
                    />
                  </div>
+                 {!tarifaSeleccionadaId && (
+                    <button 
+                      type="button"
+                      onClick={() => { const tmp = origen; setOrigen(destino); setDestino(tmp); }}
+                      title="Intercambiar Origen y Destino"
+                      style={{ marginTop: 24, background: '#1A1F26', border: '1px solid #3FA9F5', borderRadius: '50%', color: '#3FA9F5', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      <ArrowDownUp size={16} />
+                    </button>
+                 )}
                  {!tarifaSeleccionadaId && (
                    <div style={{ flex: 1, zIndex: 100 }}>
                      <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Destino</label>
@@ -616,9 +638,41 @@ export default function Viajes() {
                )}
              </div>
 
-             {/* SECCIÓN 2: TIPO DE SERVICIO Y FINANZAS */}
+             {/* DETALLES DEL PASAJERO */}
              <div style={{ marginBottom: 24 }}>
-               <h3 style={{ fontSize: 14, color: '#F59E0B', marginBottom: 12, borderBottom: '1px solid #2A2F36', paddingBottom: 6 }}>2. Modelo de Contrato y Finanzas</h3>
+               <h3 style={{ fontSize: 14, color: '#F59E0B', marginBottom: 12, borderBottom: '1px solid #2A2F36', paddingBottom: 6 }}>2. Detalles del Pasajero / Equipaje</h3>
+               <div style={{ display: 'flex', gap: 12 }}>
+                 <div style={{ flex: 2 }}>
+                   <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Nombre del Pasajero (Opcional)</label>
+                   <div style={{ position: 'relative' }}>
+                     <User size={16} color="#9CA3AF" style={{ position: 'absolute', left: 10, top: 12 }} />
+                     <input 
+                       type="text" value={nombrePasajero} onChange={e => setNombrePasajero(e.target.value)}
+                       placeholder="Ej. Sr. Gonzalez"
+                       style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
+                     />
+                   </div>
+                 </div>
+                 <div style={{ flex: 1 }}>
+                   <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Pasajeros</label>
+                   <input 
+                     type="number" min="1" value={pasajerosQty} onChange={e => setPasajerosQty(e.target.value)}
+                     style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none' }}
+                   />
+                 </div>
+                 <div style={{ flex: 1 }}>
+                   <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Valijas</label>
+                   <input 
+                     type="number" min="0" value={valijasQty} onChange={e => setValijasQty(e.target.value)}
+                     style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none' }}
+                   />
+                 </div>
+               </div>
+             </div>
+
+             {/* FINANZAS (CON PADDING BOTTOM PARA AUTOCOMPLETE Y CALENDARIO) */}
+             <div style={{ marginBottom: 24, paddingBottom: 150 }}>
+               <h3 style={{ fontSize: 14, color: '#F59E0B', marginBottom: 12, borderBottom: '1px solid #2A2F36', paddingBottom: 6 }}>3. Modelo de Contrato y Finanzas</h3>
                
                <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
                  <div style={{ flex: 1 }}>
