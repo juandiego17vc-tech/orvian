@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Check, X, CarFront, Hash, Info, Edit2, Trash2, Smartphone } from 'lucide-react'
+import { Plus, Check, X, CarFront, Hash, Info, Edit2, Trash2, Smartphone, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -27,10 +27,31 @@ export default function Choferes() {
     setLoading(true)
     const { data, error } = await supabase
       .from('choferes')
-      .select('*')
+      .select('*, viajes(encuestas(calificacion))')
       .order('created_at', { ascending: false })
     
-    if (data) setChoferes(data)
+    if (data) {
+      const enriched = data.map(c => {
+        let totalScore = 0;
+        let count = 0;
+        if (c.viajes) {
+          c.viajes.forEach(v => {
+            if (v.encuestas && v.encuestas.length > 0) {
+              v.encuestas.forEach(e => {
+                if (e.calificacion > 0) {
+                  totalScore += e.calificacion;
+                  count++;
+                }
+              })
+            }
+          })
+        }
+        c.rating = count > 0 ? (totalScore / count).toFixed(1) : 'S/N';
+        c.ratingCount = count;
+        return c;
+      })
+      setChoferes(enriched)
+    }
     setLoading(false)
   }
 
@@ -149,6 +170,7 @@ export default function Choferes() {
             <thead>
               <tr style={{ background: '#151921', borderBottom: '1px solid #2A2F36', color: '#9CA3AF' }}>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Chofer</th>
+                <th style={{ padding: '14px 16px', fontWeight: 500 }}>Score (NPS)</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Patente / Placa</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Estado Cuenta</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Disponibilidad</th>
@@ -166,6 +188,13 @@ export default function Choferes() {
                           <CarFront size={14} />
                         </div>
                         {c.nombre_completo}
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: c.ratingCount > 0 ? '#F59E0B' : '#6B7280' }}>
+                        <Star size={14} fill={c.ratingCount > 0 ? '#F59E0B' : 'transparent'} />
+                        <span style={{ fontWeight: 700 }}>{c.rating}</span>
+                        {c.ratingCount > 0 && <span style={{ fontSize: 11, color: '#6B7280' }}>({c.ratingCount})</span>}
                       </div>
                     </td>
                     <td style={{ padding: '14px 16px', color: '#9CA3AF' }}>

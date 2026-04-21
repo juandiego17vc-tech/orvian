@@ -7,6 +7,7 @@ import Register from './pages/Register'
 import Join from './pages/Join'
 import DriverApp from './pages/DriverApp'
 import ClientPortal from './pages/ClientPortal'
+import EncuestaCSI from './pages/EncuestaCSI'
 import Dashboard from './pages/Dashboard'
 import Viajes from './pages/Viajes'
 import Clientes from './pages/Clientes'
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="/join" element={<Join />} />
             <Route path="/driver/:id" element={<DriverApp />} />
             <Route path="/portal/:id" element={<ClientPortal />} />
+        <Route path="/rate/:id" element={<EncuestaCSI />} />
             <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="viajes" element={<Viajes />} />

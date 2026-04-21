@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle, Users, RefreshCw, ArrowDownUp } from 'lucide-react'
+import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle, Users, RefreshCw, ArrowDownUp, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import LocationAutocomplete from '../components/LocationAutocomplete'
@@ -290,6 +290,20 @@ export default function Viajes() {
     window.open(url, '_blank')
   }
 
+  const handleSurveyWhatsApp = (viaje) => {
+    let telefono = viaje.clientes?.telefono
+    if (!telefono) {
+      alert("Este cliente no tiene número registrado para enviar encuesta.")
+      return
+    }
+    telefono = telefono.replace(/[^0-9]/g, '')
+    
+    const urlEncuesta = `${window.location.origin}/rate/${viaje.id}`
+    const mensaje = `Hola *${viaje.clientes?.nombre_completo.split(' ')[0]}* 👋, esperamos que hayas tenido un excelente viaje.\n\nPor favor, ayúdanos a mejorar contándonos qué te pareció el servicio y tu conductor ingresando aquí:\n👉 ${urlEncuesta}\n\n¡Gracias por elegirnos! ⭐`
+    
+    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, '_blank')
+  }
+
   const getEstadoColor = (estado) => {
     const colors = {
       'Ofrecido': 'rgba(168, 85, 247, 0.15)', // Púrpura
@@ -415,11 +429,21 @@ export default function Viajes() {
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                           <button 
                             onClick={() => handleWhatsApp(v)}
-                            title="Notificar Cliente por WhatsApp"
+                            title="Notificar Cliente"
                             style={{ background: '#0B0F14', color: '#22C55E', border: '1px solid #166534', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                           >
-                            <User size={14} style={{ marginRight: 4 }} /> <MessageCircle size={16} />
+                            <User size={14} /> 
                           </button>
+                          
+                          {v.estado === 'Finalizado' && (
+                            <button 
+                              onClick={() => handleSurveyWhatsApp(v)}
+                              title="Pedir Calificación NPS al Cliente"
+                              style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', border: '1px solid #F59E0B', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            >
+                              <Star size={14} />
+                            </button>
+                          )}
                           
                           {v.chofer_id && (
                             <button 
@@ -427,7 +451,7 @@ export default function Viajes() {
                               title="Enviar Viaje al Chofer por WhatsApp"
                               style={{ background: '#0B0F14', color: '#3FA9F5', border: '1px solid #1E40AF', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                             >
-                              <Car size={14} style={{ marginRight: 4 }} /> <MessageCircle size={16} />
+                              <Car size={14} /> 
                             </button>
                           )}
                           
