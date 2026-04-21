@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { CarFront, MapPin, Navigation, CheckCircle2, AlertCircle } from 'lucide-react'
+import { CarFront, MapPin, Navigation, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react'
+import '../index.css'
 
 export default function DriverApp() {
   const { id } = useParams()
@@ -178,9 +179,18 @@ export default function DriverApp() {
 
         {viajes.length > 0 ? (
           <>
-            <div style={{ textAlign: 'left', padding: '10px 0', marginTop: viajesBolsa.length > 0 ? 10 : 0 }}>
-              <div style={{ fontSize: 12, color: '#3FA9F5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Tu Agenda (Calendario)</div>
-              <h2 style={{ color: 'white', fontSize: 18, margin: 0 }}>{viajes.length} servicios asignados</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', marginTop: viajesBolsa.length > 0 ? 10 : 0 }}>
+              <div>
+                <div style={{ fontSize: 12, color: '#3FA9F5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Tu Agenda (Calendario)</div>
+                <h2 style={{ color: 'white', fontSize: 18, margin: 0, marginTop: 4 }}>{viajes.length} servicios asignados</h2>
+              </div>
+              <button 
+                onClick={fetchDriverData}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', background: '#1A1F26', border: '1px solid #2A2F36', color: '#9CA3AF', cursor: 'pointer' }}
+                title="Actualizar Datos"
+              >
+                <RefreshCw size={18} className={loading ? "spin-animation" : ""} />
+              </button>
             </div>
 
             {Object.entries(
@@ -218,9 +228,23 @@ export default function DriverApp() {
                     const isAlwaysActionable = ['En Curso', 'Pasajero a Bordo'].includes(activeTrip.estado)
                     const canStart = isActionable || isAlwaysActionable
 
+                    // Alert overlapping schedules (menos de 60 mins)
+                    let overlapWarning = false
+                    if (index > 0 && activeTrip.fecha_programada && dayTrips[index-1].fecha_programada) {
+                      const prevT = new Date(dayTrips[index-1].fecha_programada).getTime()
+                      const currT = new Date(activeTrip.fecha_programada).getTime()
+                      if ((currT - prevT) < 3600000) overlapWarning = true
+                    }
+
                     return (
-                      <div key={activeTrip.id} style={{ background: '#1A1F26', borderRadius: 16, border: '1px solid #2A2F36', overflow: 'hidden' }}>
+                      <div key={activeTrip.id} style={{ background: '#1A1F26', border: '1px solid #2A2F36', borderRadius: 16, overflow: 'hidden' }}>
                         
+                        {overlapWarning && (
+                          <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', fontSize: 11, padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, borderBottom: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                            <AlertTriangle size={14} /> Atención: Horario muy próximo al viaje anterior (menos de 1h)
+                          </div>
+                        )}
+
                         {/* COMPACT HEADER (Tap to expand) */}
                         <div 
                           onClick={() => setExpandedTripId(isExpanded ? null : activeTrip.id)}

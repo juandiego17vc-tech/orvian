@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle, Users } from 'lucide-react'
+import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle, Users, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import LocationAutocomplete from '../components/LocationAutocomplete'
@@ -297,12 +297,21 @@ export default function Viajes() {
           <h1 style={{ fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: 700, color: '#E5E7EB' }}>Tablero de Viajes</h1>
           <p style={{ color: '#9CA3AF', fontSize: 13, marginTop: 4 }}>Centro de control de despachos y asignaciones</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3FA9F5', color: 'white', border: 'none', borderRadius: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter' }}
-        >
-          <Plus size={16} /> Nuevo Viaje Contable
-        </button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={fetchViajes}
+            title="Sincronizar Datos"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: '#1A1F26', border: '1px solid #2A2F36', borderRadius: 6, color: '#9CA3AF', cursor: 'pointer' }}
+          >
+            <RefreshCw size={18} className={loading ? "spin-animation" : ""} />
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3FA9F5', color: 'white', border: 'none', borderRadius: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter' }}
+          >
+            <Plus size={16} /> Nuevo Viaje Contable
+          </button>
+        </div>
       </div>
 
       <div style={{ background: '#1A1F26', border: '1px solid #2A2F36', borderRadius: 8, overflow: 'hidden' }}>

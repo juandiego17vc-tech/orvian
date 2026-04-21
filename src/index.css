@@ -43,3 +43,11 @@ h1, h2, h3, h4, h5, h6 {
 .pulse-dot {
   animation: pulse 2s infinite;
 }
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
