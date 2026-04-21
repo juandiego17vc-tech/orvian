@@ -75,7 +75,8 @@ export default function Viajes() {
   }
 
   const fetchChoferesList = async () => {
-    const { data } = await supabase.from('choferes').select('id, nombre_completo, disponibilidad, vehiculo_modelo, patente, vehiculo_placa').order('nombre_completo', { ascending: true })
+    const { data, error } = await supabase.from('choferes').select('id, nombre_completo, disponibilidad, vehiculo_placa').order('nombre_completo', { ascending: true })
+    if (error) console.error("Error cargando choferes on demand:", error)
     if (data) setChoferesList(data)
   }
 
@@ -86,7 +87,7 @@ export default function Viajes() {
       .select(`
         *,
         clientes(nombre_completo, telefono),
-        choferes(nombre_completo, vehiculo_placa, vehiculo_modelo, telefono),
+        choferes(nombre_completo, vehiculo_placa, telefono),
         proveedores(nombre_fantasia)
       `)
       .order('created_at', { ascending: false })
@@ -226,8 +227,8 @@ export default function Viajes() {
       mensaje += `Tu coche está reservado. Estamos asignando una unidad a la brevedad.`
     } else if (viaje.estado === 'En Curso' || viaje.chofer_id) {
       mensaje += `Te confirmamos que tu viaje está asignado.\n🚗 *Chofer:* ${viaje.choferes?.nombre_completo || 'Asignado'}\n`
-      if (viaje.choferes?.vehiculo_modelo || viaje.choferes?.vehiculo_placa) {
-        mensaje += `🚙 *Vehículo:* ${viaje.choferes?.vehiculo_modelo || 'Auto'} (Patente: ${viaje.choferes?.vehiculo_placa || 'Enviada'})\n`
+      if (viaje.choferes?.vehiculo_placa) {
+        mensaje += `🚙 *Vehículo Patente:* ${viaje.choferes?.vehiculo_placa}\n`
       }
       mensaje += `¡Te avisa cuando esté en la puerta!`
     } else {
@@ -317,7 +318,7 @@ export default function Viajes() {
                   return (
                     <tr key={v.id} style={{ borderBottom: '1px solid #2A2F36', color: '#E5E7EB' }}>
                       <td style={{ padding: '14px 16px', fontWeight: 500 }}>
-                        {v.clientes?.nombre_completo}
+                        {v.clientes?.nombre_completo || v.nombre_pasajero}
                         <div style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>
                           {v.tipo_servicio === 'Tercerizado' && `📤 Subcontrata: ${v.proveedores?.nombre_fantasia || 'Agencia'}`}
                           {v.tipo_servicio === 'B2B' && `📥 Pedido B2B: ${v.proveedores?.nombre_fantasia || 'Agencia'}`}
