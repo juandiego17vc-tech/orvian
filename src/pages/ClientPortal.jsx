@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Building, MapPin, Send, AlertCircle, Clock, CheckCircle } from 'lucide-react'
+import LocationAutocomplete from '../components/LocationAutocomplete'
 
 export default function ClientPortal() {
   const { id } = useParams()
@@ -111,24 +112,20 @@ export default function ClientPortal() {
             <form onSubmit={handleSolicitar} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Punto de Recogida</label>
-                <div style={{ position: 'relative' }}>
-                  <MapPin size={16} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: 12 }} />
-                  <input 
-                    type="text" required placeholder="Ej. Puerta Principal del Hotel"
-                    value={origen} onChange={e => setOrigen(e.target.value)}
-                    style={{ width: '100%', border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px 10px 36px', fontSize: 14, outlineColor: '#8B5CF6' }}
+                <div style={{ position: 'relative', zIndex: 101 }}>
+                  <LocationAutocomplete 
+                    value={origen} onChange={setOrigen} 
+                    placeholder="Ej. Puerta Principal del Hotel" iconColor="#9CA3AF"
                   />
                 </div>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Destino</label>
-                <div style={{ position: 'relative' }}>
-                  <MapPin size={16} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: 12 }} />
-                  <input 
-                    type="text" required placeholder="Ej. Aeropuerto"
-                    value={destino} onChange={e => setDestino(e.target.value)}
-                    style={{ width: '100%', border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px 10px 36px', fontSize: 14, outlineColor: '#8B5CF6' }}
+                <div style={{ position: 'relative', zIndex: 100 }}>
+                  <LocationAutocomplete 
+                    value={destino} onChange={setDestino} 
+                    placeholder="Ej. Aeropuerto" iconColor="#9CA3AF"
                   />
                 </div>
               </div>

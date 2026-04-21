@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import LocationAutocomplete from '../components/LocationAutocomplete'
 
 export default function Viajes() {
   const { tenantId } = useAuth()
@@ -545,28 +546,20 @@ export default function Viajes() {
 
                {/* SECCIÓN MAPAS Y RUTEO */}
                <div style={{ display: 'flex', gap: 12 }}>
-                 <div style={{ flex: 1 }}>
+                 <div style={{ flex: 1, zIndex: 101 }}>
                    <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>{tarifaSeleccionadaId ? 'Servicio / Origen' : 'Origen'}</label>
-                   <div style={{ position: 'relative' }}>
-                     <MapPin size={16} color="#3FA9F5" style={{ position: 'absolute', left: 10, top: 12 }} />
-                     <input 
-                       type="text" required value={origen} onChange={e => setOrigen(e.target.value)}
-                       placeholder="Ej. Obelisco, Buenos Aires"
-                       style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
-                     />
-                   </div>
+                   <LocationAutocomplete 
+                     value={origen} onChange={setOrigen} 
+                     placeholder="Ej. Obelisco, Buenos Aires" iconColor="#3FA9F5" 
+                   />
                  </div>
                  {!tarifaSeleccionadaId && (
-                   <div style={{ flex: 1 }}>
+                   <div style={{ flex: 1, zIndex: 100 }}>
                      <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Destino</label>
-                     <div style={{ position: 'relative' }}>
-                       <MapPin size={16} color="#22C55E" style={{ position: 'absolute', left: 10, top: 12 }} />
-                       <input 
-                         type="text" required value={destino} onChange={e => setDestino(e.target.value)}
-                         placeholder="Ej. Aeropuerto Ezeiza"
-                         style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
-                       />
-                     </div>
+                     <LocationAutocomplete 
+                       value={destino} onChange={setDestino} 
+                       placeholder="Ej. Aeropuerto Ezeiza" iconColor="#22C55E" 
+                     />
                    </div>
                  )}
                </div>
