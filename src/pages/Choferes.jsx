@@ -14,6 +14,7 @@ export default function Choferes() {
   // Form State
   const [nombre, setNombre] = useState('')
   const [placa, setPlaca] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [comision, setComision] = useState(33)
   const [disponibilidad, setDisponibilidad] = useState('Disponible')
   const [estadoCuenta, setEstadoCuenta] = useState('Activo')
@@ -38,6 +39,7 @@ export default function Choferes() {
       setChoferEditando(chofer)
       setNombre(chofer.nombre_completo)
       setPlaca(chofer.vehiculo_placa || '')
+      setTelefono(chofer.telefono || '')
       setComision(chofer.comision_porcentaje || 33)
       setDisponibilidad(chofer.disponibilidad)
       setEstadoCuenta(chofer.estado)
@@ -45,6 +47,7 @@ export default function Choferes() {
       setChoferEditando(null)
       setNombre('')
       setPlaca('')
+      setTelefono('')
       setComision(33)
       setDisponibilidad('Disponible')
       setEstadoCuenta('Activo')
@@ -65,6 +68,7 @@ export default function Choferes() {
           .update({
             nombre_completo: nombre,
             vehiculo_placa: placa || null,
+            telefono: telefono || null,
             comision_porcentaje: comision,
             disponibilidad: disponibilidad,
             estado: estadoCuenta
@@ -79,6 +83,7 @@ export default function Choferes() {
             tenant_id: tenantId,
             nombre_completo: nombre,
             vehiculo_placa: placa || null,
+            telefono: telefono || null,
             comision_porcentaje: comision,
             disponibilidad: disponibilidad,
             estado: 'Activo'
