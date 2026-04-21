@@ -120,8 +120,8 @@ export default function ClientPortal() {
             )}
 
             <form onSubmit={handleSolicitar} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
                   <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Punto de Recogida</label>
                   <div style={{ position: 'relative', zIndex: 101 }}>
                     <LocationAutocomplete 
@@ -131,16 +131,18 @@ export default function ClientPortal() {
                   </div>
                 </div>
 
-                <button 
-                  type="button"
-                  onClick={() => { const tmp = origen; setOrigen(destino); setDestino(tmp); }}
-                  title="Intercambiar Origen y Destino"
-                  style={{ marginTop: 24, background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: '50%', color: '#6B7280', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-                >
-                  <ArrowDownUp size={18} />
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: -10, marginBottom: -10, zIndex: 10 }}>
+                  <button 
+                    type="button"
+                    onClick={() => { const tmp = origen; setOrigen(destino); setDestino(tmp); }}
+                    title="Intercambiar Origen y Destino"
+                    style={{ background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: '50%', color: '#6B7280', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transform: 'rotate(90deg)' }}
+                  >
+                    <ArrowDownUp size={16} />
+                  </button>
+                </div>
 
-                <div style={{ flex: 1 }}>
+                <div>
                   <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Destino</label>
                   <div style={{ position: 'relative', zIndex: 100 }}>
                     <LocationAutocomplete 
@@ -162,15 +164,19 @@ export default function ClientPortal() {
                 </div>
               </div>
 
-              <div style={{ paddingBottom: 150 }}>
-                <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>¿Para quién es el viaje?</label>
-                <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ paddingBottom: 150, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>¿Para quién es el viaje?</label>
                   <input 
                     type="text" required placeholder="Nombre del huésped / ejecutivo"
                     value={pasajero} onChange={e => setPasajero(e.target.value)}
-                    style={{ flex: 2, border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px', fontSize: 14, outlineColor: '#8B5CF6' }}
+                    style={{ width: '100%', border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px', fontSize: 14, outlineColor: '#8B5CF6' }}
                   />
+                </div>
+                
+                <div style={{ display: 'flex', gap: 12 }}>
                   <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Pasajeros</label>
                     <select 
                       value={pasajerosQty} onChange={e => setPasajerosQty(parseInt(e.target.value))}
                       style={{ width: '100%', border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px', fontSize: 14, outlineColor: '#8B5CF6' }}
@@ -182,6 +188,7 @@ export default function ClientPortal() {
                     </select>
                   </div>
                   <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Equipaje</label>
                     <select 
                       value={valijasQty} onChange={e => setValijasQty(parseInt(e.target.value))}
                       style={{ width: '100%', border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px', fontSize: 14, outlineColor: '#8B5CF6' }}
