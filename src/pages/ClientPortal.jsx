@@ -82,11 +82,11 @@ export default function ClientPortal() {
       {/* HEADER CORPORATIVO (Limpio y formal para clientes) */}
       <header style={{ background: 'white', padding: '20px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 8, background: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-            <Building size={24} />
+          <div style={{ width: 40, height: 40, background: '#8B5CF6', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 10px rgba(139, 92, 246, 0.3)' }}>
+            <Building size={20} />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 18, color: '#111827', fontWeight: 700 }}>{cliente?.nombre_empresa}</h1>
+            <h1 style={{ margin: 0, fontSize: 18, color: '#111827', fontWeight: 700 }}>{cliente?.nombre_completo || 'Cliente'}</h1>
             <div style={{ color: '#6B7280', fontSize: 12 }}>Portal de Autogestión de Reservas</div>
           </div>
         </div>
