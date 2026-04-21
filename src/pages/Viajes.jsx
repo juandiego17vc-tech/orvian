@@ -86,7 +86,7 @@ export default function Viajes() {
       .select(`
         *,
         clientes(nombre_completo, telefono),
-        choferes(nombre_completo, vehiculo_placa, vehiculo_modelo),
+        choferes(nombre_completo, vehiculo_placa, vehiculo_modelo, telefono),
         proveedores(nombre_fantasia)
       `)
       .order('created_at', { ascending: false })
@@ -238,6 +238,24 @@ export default function Viajes() {
     window.open(url, '_blank')
   }
 
+  const handleWhatsAppChofer = (viaje) => {
+    let telefono = viaje.choferes?.telefono
+    if (!telefono) {
+      alert("Este chofer no tiene número de WhatsApp registrado en su ficha.")
+      return
+    }
+    telefono = telefono.replace(/[^0-9]/g, '')
+    
+    let mensaje = `¡Hola *${viaje.choferes?.nombre_completo}*! Tienes un nuevo viaje asignado.\n\n`
+    mensaje += `📍 *Origen:* ${viaje.origen}\n`
+    if (viaje.destino) mensaje += `🏁 *Destino:* ${viaje.destino}\n`
+    mensaje += `👤 *Pasajero:* ${viaje.nombre_pasajero || viaje.clientes?.nombre_completo || 'Corporativo'}\n\n`
+    mensaje += `👉 *Confirma y gestiona el viaje aquí:* ${window.location.origin}/driver/${viaje.chofer_id}`
+
+    const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`
+    window.open(url, '_blank')
+  }
+
   const getEstadoColor = (estado) => {
     const colors = {
       'Pendiente': 'rgba(245, 158, 11, 0.15)', // Ámbar
@@ -352,11 +370,22 @@ export default function Viajes() {
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                           <button 
                             onClick={() => handleWhatsApp(v)}
-                            title="Notificar por WhatsApp"
+                            title="Notificar Cliente por WhatsApp"
                             style={{ background: '#0B0F14', color: '#22C55E', border: '1px solid #166534', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                           >
-                            <MessageCircle size={16} />
+                            <User size={14} style={{ marginRight: 4 }} /> <MessageCircle size={16} />
                           </button>
+                          
+                          {v.chofer_id && (
+                            <button 
+                              onClick={() => handleWhatsAppChofer(v)}
+                              title="Enviar Viaje al Chofer por WhatsApp"
+                              style={{ background: '#0B0F14', color: '#3FA9F5', border: '1px solid #1E40AF', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            >
+                              <Car size={14} style={{ marginRight: 4 }} /> <MessageCircle size={16} />
+                            </button>
+                          )}
+
                           <button 
                             onClick={() => abrirGestion(v)}
                             style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(63,169,245,0.1)', color: '#3FA9F5', border: '1px solid rgba(63,169,245,0.2)', padding: '6px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 500 }}

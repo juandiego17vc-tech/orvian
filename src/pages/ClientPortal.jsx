@@ -44,13 +44,20 @@ export default function ClientPortal() {
     e.preventDefault()
     setSolicitando(true)
     
-    await supabase.rpc('rpc_crear_viaje_cliente', { 
+    const { error: rpcError } = await supabase.rpc('rpc_crear_viaje_cliente', { 
       p_cliente_id: id,
       p_origen: origen,
       p_destino: destino,
       p_pasajero: pasajero 
     })
     
+    if (rpcError) {
+      console.error(rpcError)
+      alert("Hubo un error al pedir el auto: " + rpcError.message)
+      setSolicitando(false)
+      return
+    }
+
     setSuccess(true)
     setSolicitando(false)
     setOrigen(''); setDestino(''); setPasajero('')

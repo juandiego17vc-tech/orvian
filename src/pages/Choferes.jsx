@@ -294,6 +294,18 @@ export default function Choferes() {
                 )}
               </div>
 
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Teléfono WhatsApp</label>
+                <div style={{ position: 'relative' }}>
+                  <Hash size={16} color="#9CA3AF" style={{ position: 'absolute', left: 10, top: 12 }} />
+                  <input 
+                    type="tel" value={telefono} onChange={e => setTelefono(e.target.value)}
+                    placeholder="Ej. +5491100001111"
+                    style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', borderTop: '1px solid #2A2F36', paddingTop: 16 }}>
                 <button 
                   type="button" onClick={() => setIsModalOpen(false)}
