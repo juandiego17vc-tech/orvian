@@ -247,11 +247,11 @@ export default function Viajes() {
     }
     telefono = telefono.replace(/[^0-9]/g, '')
     
-    let mensaje = `¡Hola *${viaje.choferes?.nombre_completo}*! Tienes un nuevo viaje asignado.\n\n`
+    let mensaje = `¡Hola *${viaje.choferes?.nombre_completo}*! Tienes una nueva OFERTA de viaje.\n\n`
     mensaje += `📍 *Origen:* ${viaje.origen}\n`
     if (viaje.destino) mensaje += `🏁 *Destino:* ${viaje.destino}\n`
     mensaje += `👤 *Pasajero:* ${viaje.nombre_pasajero || viaje.clientes?.nombre_completo || 'Corporativo'}\n\n`
-    mensaje += `👉 *Confirma y gestiona el viaje aquí:* ${window.location.origin}/driver/${viaje.chofer_id}`
+    mensaje += `👉 *TOCA AQUÍ para ver tu agenda y ACEPTAR el viaje:* ${window.location.origin}/driver/${viaje.chofer_id}`
 
     const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`
     window.open(url, '_blank')
@@ -259,6 +259,7 @@ export default function Viajes() {
 
   const getEstadoColor = (estado) => {
     const colors = {
+      'Ofrecido': 'rgba(168, 85, 247, 0.15)', // Púrpura
       'Pendiente': 'rgba(245, 158, 11, 0.15)', // Ámbar
       'En Curso': 'rgba(63, 169, 245, 0.15)',  // Azul
       'Finalizado': 'rgba(34, 197, 94, 0.15)', // Verde
@@ -266,6 +267,7 @@ export default function Viajes() {
       'Liquidado': 'rgba(139, 92, 246, 0.15)' // Violeta
     }
     const txtColors = {
+      'Ofrecido': '#A855F7',
       'Pendiente': '#F59E0B',
       'En Curso': '#3FA9F5',
       'Finalizado': '#22C55E',
@@ -759,7 +761,8 @@ export default function Viajes() {
                     value={manageEstado} onChange={e => setManageEstado(e.target.value)}
                     style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none', appearance: 'none' }}
                   >
-                    <option value="Pendiente">Pendiente de Ejecución</option>
+                    <option value="Ofrecido">Ofrecido (Esperando Aceptación Chofer)</option>
+                    <option value="Pendiente">Pendiente de Ejecución / Asignado</option>
                     <option value="En Curso">En Curso</option>
                     <option value="Finalizado">Finalizado (Listo p/ liquidar)</option>
                     <option value="Cancelado">Cancelado</option>

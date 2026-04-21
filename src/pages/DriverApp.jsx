@@ -32,6 +32,12 @@ export default function DriverApp() {
     // Buscar viajes asignados NO finalizados
     const { data: viajesData } = await supabase.rpc('rpc_get_viajes_chofer', { p_chofer_id: id })
     if (viajesData) {
+      // Ordenar por fecha (los nulos/inmediatos van primero)
+      viajesData.sort((a, b) => {
+        let da = a.fecha_programada ? new Date(a.fecha_programada).getTime() : 0
+        let db = b.fecha_programada ? new Date(b.fecha_programada).getTime() : 0
+        return da - db
+      })
       setViajes(viajesData)
     }
 
@@ -41,14 +47,21 @@ export default function DriverApp() {
   const handleUpdateStatus = async (viajeId, nuevoEstado) => {
     if (!window.confirm(`¿Confirmas que el viaje pasa a estado: ${nuevoEstado}?`)) return
     
-    // Optimistic Update
     setViajes(viajes.map(v => v.id === viajeId ? { ...v, estado: nuevoEstado } : v))
     if (nuevoEstado === 'Finalizado') {
        setViajes(viajes.filter(v => v.id !== viajeId))
     }
 
     await supabase.rpc('rpc_update_viaje_estado', { p_viaje_id: viajeId, p_estado: nuevoEstado })
-    fetchDriverData() // recargar para consistencia
+    fetchDriverData()
+  }
+
+  const handleRechazar = async (viajeId) => {
+    if (!window.confirm(`¿Estás seguro de RECHAZAR este viaje? Desaparecerá de tu agenda.`)) return
+    
+    setViajes(viajes.filter(v => v.id !== viajeId))
+    await supabase.rpc('rpc_rechazar_viaje', { p_viaje_id: viajeId })
+    fetchDriverData()
   }
 
   if (loading) return <div style={{ minHeight: '100vh', background: '#0B0F14', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3FA9F5' }}>Iniciando Consola Móvil...</div>
@@ -147,8 +160,18 @@ export default function DriverApp() {
                     <MapPin size={18} /> Abrir trayecto en GPS
                   </a>
 
-                  {/* ACTION BUTTONS (Solo se habilita para el viaje prioritario o actual) */}
+                  {/* ACTION BUTTONS */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginTop: 20 }}>
+                    {activeTrip.estado === 'Ofrecido' && (
+                      <div style={{ display: 'flex', gap: 12 }}>
+                        <button onClick={() => handleUpdateStatus(activeTrip.id, 'Pendiente')} style={{ flex: 1, background: '#10B981', color: 'white', border: 'none', padding: '14px 10px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            <CheckCircle2 size={18}/> Aceptar Viaje
+                        </button>
+                        <button onClick={() => handleRechazar(activeTrip.id)} style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px 10px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            ❌ Rechazar
+                        </button>
+                      </div>
+                    )}
                     {activeTrip.estado === 'Pendiente' && (
                       <button onClick={() => handleUpdateStatus(activeTrip.id, 'En Curso')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: 18, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <Navigation size={18}/> Iniciar Viaje (Voy en camino)
