@@ -183,3 +183,38 @@ BEGIN
   UPDATE public.viajes SET estado = p_estado WHERE id = p_viaje_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ========================================================
+-- 7. PORTAL B2B CLIENTES (Autogestión por Magic Link)
+-- ========================================================
+CREATE OR REPLACE FUNCTION rpc_get_cliente(p_id UUID)
+RETURNS SETOF public.clientes AS $$
+  SELECT * FROM public.clientes WHERE id = p_id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION rpc_get_resumen_cliente(p_cliente_id UUID)
+RETURNS TABLE (
+  total_viajes BIGINT,
+  deuda_actual NUMERIC
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    COUNT(*),
+    COALESCE(SUM(precio_estimado), 0)
+  FROM public.viajes 
+  WHERE cliente_id = p_cliente_id AND archivado = false;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION rpc_crear_viaje_cliente(p_cliente_id UUID, p_origen TEXT, p_destino TEXT, p_pasajero TEXT)
+RETURNS void AS $$
+DECLARE
+  v_tenant_id UUID;
+BEGIN
+  SELECT tenant_id INTO v_tenant_id FROM public.clientes WHERE id = p_cliente_id;
+  
+  INSERT INTO public.viajes (tenant_id, cliente_id, nombre_pasajero, origen, destino, estado, quien_cobro)
+  VALUES (v_tenant_id, p_cliente_id, p_pasajero, p_origen, p_destino, 'Pendiente', 'Agencia');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

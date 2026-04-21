@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, User, Phone, Check, X, Users, Tag, Edit2, Trash2 } from 'lucide-react'
+import { Plus, User, Phone, Check, X, Users, Tag, Edit2, Trash2, Link as LinkIcon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -161,6 +161,15 @@ export default function Clientes() {
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', gap: 8 }}>
+                        <button 
+                          title="Copiar Link de Portal" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/portal/${c.id}`)
+                            alert('Link del Portal Copiado. El cliente podrá ver su cuenta y pedir autos sin iniciar sesión.')
+                          }} 
+                          style={{ background: 'transparent', border: '1px solid #8B5CF6', borderRadius: 6, padding: '6px', cursor: 'pointer', color: '#8B5CF6' }}>
+                          <LinkIcon size={14} />
+                        </button>
                         <button onClick={() => handleOpenForm(c)} style={{ background: 'transparent', border: '1px solid #2A2F36', borderRadius: 6, padding: '6px', cursor: 'pointer', color: '#9CA3AF' }}>
                           <Edit2 size={14} />
                         </button>

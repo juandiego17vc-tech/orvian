@@ -490,6 +490,7 @@ export default function Viajes() {
                  </div>
                )}
 
+               {/* SECCIÓN MAPAS Y RUTEO */}
                <div style={{ display: 'flex', gap: 12 }}>
                  <div style={{ flex: 1 }}>
                    <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>{tarifaSeleccionadaId ? 'Servicio / Origen' : 'Origen'}</label>
@@ -497,7 +498,7 @@ export default function Viajes() {
                      <MapPin size={16} color="#3FA9F5" style={{ position: 'absolute', left: 10, top: 12 }} />
                      <input 
                        type="text" required value={origen} onChange={e => setOrigen(e.target.value)}
-                       placeholder="Dirección origen"
+                       placeholder="Ej. Obelisco, Buenos Aires"
                        style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
                      />
                    </div>
@@ -509,13 +510,55 @@ export default function Viajes() {
                        <MapPin size={16} color="#22C55E" style={{ position: 'absolute', left: 10, top: 12 }} />
                        <input 
                          type="text" required value={destino} onChange={e => setDestino(e.target.value)}
-                         placeholder="Dirección destino"
+                         placeholder="Ej. Aeropuerto Ezeiza"
                          style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none' }}
                        />
                      </div>
                    </div>
                  )}
                </div>
+               
+               {!tarifaSeleccionadaId && origen && destino && (
+                 <div style={{ marginTop: 12 }}>
+                   <button 
+                     type="button" 
+                     onClick={async () => {
+                       const btn = document.getElementById('btn-cotizar');
+                       btn.innerText = 'Calculando...';
+                       try {
+                         const reqOrg = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(origen)}`);
+                         const dataOrg = await reqOrg.json();
+                         const reqDst = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino)}`);
+                         const dataDst = await reqDst.json();
+                         
+                         if(dataOrg.length > 0 && dataDst.length > 0) {
+                           const orgCoords = `${dataOrg[0].lon},${dataOrg[0].lat}`;
+                           const dstCoords = `${dataDst[0].lon},${dataDst[0].lat}`;
+                           const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${orgCoords};${dstCoords}?overview=false`);
+                           const routeData = await route.json();
+                           
+                           if(routeData.routes && routeData.routes.length > 0) {
+                             const distanceKm = routeData.routes[0].distance / 1000;
+                             // Cotización: Precio Base $2500 + $800 por KM
+                             const precioSugerido = 2500 + (distanceKm * 800);
+                             setPrecio(Math.round(precioSugerido).toString());
+                             btn.innerText = `Ruta: ${distanceKm.toFixed(1)} km - Cotización Aplicada!`;
+                             setTimeout(() => btn.innerText = '🗺️ Cotizar Ruta Automáticamente', 3000);
+                           }
+                         } else {
+                           btn.innerText = 'Ruta no encontrada';
+                         }
+                       } catch(e) {
+                         btn.innerText = 'Error GPS';
+                       }
+                     }}
+                     id="btn-cotizar"
+                     style={{ width: '100%', background: 'rgba(63,169,245,0.1)', border: '1px solid #3FA9F5', color: '#3FA9F5', padding: '10px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: '0.3s' }}
+                   >
+                     🗺️ Cotizar Ruta Automáticamente
+                   </button>
+                 </div>
+               )}
              </div>
 
              {/* SECCIÓN 2: TIPO DE SERVICIO Y FINANZAS */}
