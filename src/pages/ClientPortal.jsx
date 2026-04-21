@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Building, MapPin, Send, AlertCircle, Clock, CheckCircle } from 'lucide-react'
+import { Building, MapPin, Send, AlertCircle, Clock, CheckCircle, ArrowDownUp, Calendar } from 'lucide-react'
 import LocationAutocomplete from '../components/LocationAutocomplete'
 
 export default function ClientPortal() {
@@ -13,7 +13,10 @@ export default function ClientPortal() {
   
   const [origen, setOrigen] = useState('')
   const [destino, setDestino] = useState('')
+  const [fecha, setFecha] = useState('')
   const [pasajero, setPasajero] = useState('')
+  const [pasajerosQty, setPasajerosQty] = useState(1)
+  const [valijasQty, setValijasQty] = useState(0)
   const [solicitando, setSolicitando] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -45,11 +48,18 @@ export default function ClientPortal() {
     e.preventDefault()
     setSolicitando(true)
     
+    let finalPasajero = pasajero
+    if (pasajerosQty > 1 || valijasQty > 0) {
+      if(!finalPasajero) finalPasajero = 'Ejecutivo'
+      finalPasajero += ` [${pasajerosQty} Pasajeros, ${valijasQty} Valijas]`
+    }
+
     const { error: rpcError } = await supabase.rpc('rpc_crear_viaje_cliente', { 
       p_cliente_id: id,
       p_origen: origen,
       p_destino: destino,
-      p_pasajero: pasajero 
+      p_pasajero: finalPasajero,
+      p_fecha: fecha ? new Date(fecha).toISOString() : null
     })
     
     if (rpcError) {
@@ -61,7 +71,7 @@ export default function ClientPortal() {
 
     setSuccess(true)
     setSolicitando(false)
-    setOrigen(''); setDestino(''); setPasajero('')
+    setOrigen(''); setDestino(''); setPasajero(''); setFecha(''); setPasajerosQty(1); setValijasQty(0)
     fetchData()
     
     setTimeout(() => setSuccess(false), 5000)
@@ -110,33 +120,80 @@ export default function ClientPortal() {
             )}
 
             <form onSubmit={handleSolicitar} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Punto de Recogida</label>
-                <div style={{ position: 'relative', zIndex: 101 }}>
-                  <LocationAutocomplete 
-                    value={origen} onChange={setOrigen} 
-                    placeholder="Ej. Puerta Principal del Hotel" iconColor="#9CA3AF"
-                  />
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Punto de Recogida</label>
+                  <div style={{ position: 'relative', zIndex: 101 }}>
+                    <LocationAutocomplete 
+                      value={origen} onChange={setOrigen} 
+                      placeholder="Ej. Puerta Principal del Hotel" iconColor="#9CA3AF"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="button"
+                  onClick={() => { const tmp = origen; setOrigen(destino); setDestino(tmp); }}
+                  title="Intercambiar Origen y Destino"
+                  style={{ marginTop: 24, background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: '50%', color: '#6B7280', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  <ArrowDownUp size={18} />
+                </button>
+
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Destino</label>
+                  <div style={{ position: 'relative', zIndex: 100 }}>
+                    <LocationAutocomplete 
+                      value={destino} onChange={setDestino} 
+                      placeholder="Ej. Aeropuerto" iconColor="#9CA3AF"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Destino</label>
-                <div style={{ position: 'relative', zIndex: 100 }}>
-                  <LocationAutocomplete 
-                    value={destino} onChange={setDestino} 
-                    placeholder="Ej. Aeropuerto" iconColor="#9CA3AF"
+                <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>Fecha Programada (Opcional)</label>
+                <div style={{ position: 'relative' }}>
+                  <Calendar size={16} color="#9CA3AF" style={{ position: 'absolute', left: 10, top: 12 }} />
+                  <input 
+                    type="datetime-local" value={fecha} onChange={e => setFecha(e.target.value)}
+                    style={{ width: '100%', background: '#F9FAFB', border: '1px solid #D1D5DB', borderRadius: 8, padding: '10px 12px 10px 32px', color: '#111827', outlineColor: '#8B5CF6' }}
                   />
                 </div>
               </div>
 
-              <div>
+              <div style={{ paddingBottom: 150 }}>
                 <label style={{ display: 'block', fontSize: 12, color: '#4B5563', marginBottom: 6, fontWeight: 600 }}>¿Para quién es el viaje?</label>
-                <input 
-                  type="text" required placeholder="Nombre del huésped / ejecutivo"
-                  value={pasajero} onChange={e => setPasajero(e.target.value)}
-                  style={{ width: '100%', border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px', fontSize: 14, outlineColor: '#8B5CF6' }}
-                />
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <input 
+                    type="text" required placeholder="Nombre del huésped / ejecutivo"
+                    value={pasajero} onChange={e => setPasajero(e.target.value)}
+                    style={{ flex: 2, border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px', fontSize: 14, outlineColor: '#8B5CF6' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <select 
+                      value={pasajerosQty} onChange={e => setPasajerosQty(parseInt(e.target.value))}
+                      style={{ width: '100%', border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px', fontSize: 14, outlineColor: '#8B5CF6' }}
+                    >
+                      <option value="1">1 Pasajero</option>
+                      <option value="2">2 Pasajeros</option>
+                      <option value="3">3 Pasajeros</option>
+                      <option value="4">4 Pasajeros</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <select 
+                      value={valijasQty} onChange={e => setValijasQty(parseInt(e.target.value))}
+                      style={{ width: '100%', border: '1px solid #D1D5DB', background: '#F9FAFB', borderRadius: 8, padding: '10px 12px', fontSize: 14, outlineColor: '#8B5CF6' }}
+                    >
+                      <option value="0">Sin Equipaje</option>
+                      <option value="1">1 Valija</option>
+                      <option value="2">2 Valijas</option>
+                      <option value="3">3 Valijas</option>
+                      <option value="4">4 Valijas</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <button 
