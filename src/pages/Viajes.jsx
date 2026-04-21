@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle } from 'lucide-react'
+import { Plus, MapPin, Calendar, DollarSign, Check, X, Car, Settings, User, Building, Banknote, CreditCard, MessageCircle, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -257,6 +257,17 @@ export default function Viajes() {
     window.open(url, '_blank')
   }
 
+  const handleWhatsAppBroadcast = (viaje) => {
+    let mensaje = `🚨 *NUEVO VIAJE DISPONIBLE EN BOLSA* 🚨\n\n`
+    mensaje += `📍 *Origen:* ${viaje.origen}\n`
+    if (viaje.destino) mensaje += `🏁 *Destino:* ${viaje.destino}\n`
+    mensaje += `⏰ *Fecha:* ${viaje.fecha_programada ? new Date(viaje.fecha_programada).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : 'Lo antes posible'}\n\n`
+    mensaje += `⚠️ *Instrucciones:* Ingresa a tu App de Conductor para RECIBIR este viaje.\nEl primero que lo acepte se lo queda.`
+
+    const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`
+    window.open(url, '_blank')
+  }
+
   const getEstadoColor = (estado) => {
     const colors = {
       'Ofrecido': 'rgba(168, 85, 247, 0.15)', // Púrpura
@@ -386,6 +397,16 @@ export default function Viajes() {
                               style={{ background: '#0B0F14', color: '#3FA9F5', border: '1px solid #1E40AF', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                             >
                               <Car size={14} style={{ marginRight: 4 }} /> <MessageCircle size={16} />
+                            </button>
+                          )}
+                          
+                          {!v.chofer_id && v.estado === 'Pendiente' && (
+                            <button 
+                              onClick={() => handleWhatsAppBroadcast(v)}
+                              title="Avisar al Grupo de Choferes por WhatsApp"
+                              style={{ background: '#0B0F14', color: '#A855F7', border: '1px solid #7E22CE', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            >
+                              <Users size={14} style={{ marginRight: 4 }} /> <MessageCircle size={16} />
                             </button>
                           )}
 

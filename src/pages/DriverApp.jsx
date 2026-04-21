@@ -7,11 +7,15 @@ export default function DriverApp() {
   const { id } = useParams()
   const [chofer, setChofer] = useState(null)
   const [viajes, setViajes] = useState([])
+  const [viajesBolsa, setViajesBolsa] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchDriverData()
+    // Configurar polling automático cada 30 segundos
+    const interval = setInterval(fetchDriverData, 30000)
+    return () => clearInterval(interval)
   }, [id])
 
   const fetchDriverData = async () => {
@@ -41,7 +45,36 @@ export default function DriverApp() {
       setViajes(viajesData)
     }
 
+    // Buscar viajes libres (Bolsa de trabajo)
+    const { data: bolsaData } = await supabase.rpc('rpc_get_viajes_libres')
+    if (bolsaData) {
+      bolsaData.sort((a, b) => {
+        let da = a.fecha_programada ? new Date(a.fecha_programada).getTime() : 0
+        let db = b.fecha_programada ? new Date(b.fecha_programada).getTime() : 0
+        return da - db
+      })
+      setViajesBolsa(bolsaData)
+    }
+
     setLoading(false)
+  }
+
+  const handleReclamarViaje = async (viajeId) => {
+    if (!window.confirm("¿Estás seguro de reclamar y hacerte cargo de este viaje? Al aceptar, el sistema te lo adjudicará a ti de inmediato.")) return
+    
+    setLoading(true)
+    const { error } = await supabase.rpc('rpc_reclamar_viaje', { 
+      p_viaje_id: viajeId, 
+      p_chofer_id: id 
+    })
+    
+    if (error) {
+      alert("¡Ups! Alguien más ágil tomó este viaje justo antes que tú.")
+    } else {
+      alert("¡Es todo tuyo! El viaje está ahora en tu agenda.")
+    }
+    
+    fetchDriverData()
   }
 
   const handleUpdateStatus = async (viajeId, nuevoEstado) => {
@@ -97,10 +130,55 @@ export default function DriverApp() {
       {/* CONTENT */}
       <main style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
         
+        {viajesBolsa.length > 0 && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ textAlign: 'left', padding: '10px 0' }}>
+              <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }}></span> 
+                {viajesBolsa.length} VIAJES DISPONIBLES EN BOLSA
+              </div>
+              <p style={{ color: '#9CA3AF', fontSize: 12, margin: 0 }}>Toca "Mío" velozmente para robar el viaje.</p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {viajesBolsa.map(bolsaTrip => (
+                <div key={bolsaTrip.id} style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid #F59E0B', borderRadius: 12, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700 }}>
+                      {bolsaTrip.fecha_programada ? new Date(bolsaTrip.fecha_programada).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : 'INMEDIATO'}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#4ADE80', fontWeight: 700 }}>
+                      {bolsaTrip.quien_cobro === 'Chofer' ? `$${bolsaTrip.precio_estimado} al subirse` : 'Cta Cte'}
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #3FA9F5', marginTop: 3 }}></div>
+                      <div style={{ color: 'white', fontSize: 13, flex: 1 }}>{bolsaTrip.origen}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #EF4444', marginTop: 3 }}></div>
+                      <div style={{ color: 'white', fontSize: 13, flex: 1 }}>{bolsaTrip.destino}</div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => handleReclamarViaje(bolsaTrip.id)}
+                    style={{ width: '100%', background: '#F59E0B', color: '#0B0F14', border: 'none', padding: '12px 10px', borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                  >
+                    ⚡ ¡YO LO HAGO! (Reclamar)
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {viajes.length > 0 ? (
           <>
-            <div style={{ textAlign: 'center', padding: '10px 0' }}>
-              <div style={{ fontSize: 12, color: '#3FA9F5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Tu Agenda de Viajes</div>
+            <div style={{ textAlign: 'left', padding: '10px 0', marginTop: viajesBolsa.length > 0 ? 10 : 0 }}>
+              <div style={{ fontSize: 12, color: '#3FA9F5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Tu Agenda Personal</div>
               <h2 style={{ color: 'white', fontSize: 18, margin: 0 }}>Tienes {viajes.length} servicios asignados</h2>
             </div>
 
