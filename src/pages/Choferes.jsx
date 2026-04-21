@@ -27,7 +27,7 @@ export default function Choferes() {
     setLoading(true)
     const { data, error } = await supabase
       .from('choferes')
-      .select('*, viajes(encuestas(calificacion))')
+      .select('*, viajes(id, estado, encuestas(calificacion))')
       .order('created_at', { ascending: false })
     
     if (data) {
@@ -46,6 +46,11 @@ export default function Choferes() {
             }
           })
         }
+        
+        // Determinar estado del viaje activo
+        const activeTrip = c.viajes?.find(v => v.estado === 'En Curso' || v.estado === 'Pasajero a Bordo' || v.estado === 'Pendiente');
+        c.estadoViajeActual = activeTrip ? activeTrip.estado : null;
+        
         c.rating = count > 0 ? (totalScore / count).toFixed(1) : 'S/N';
         c.ratingCount = count;
         return c;
@@ -211,9 +216,14 @@ export default function Choferes() {
                       </span>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
-                      <span style={{ background: badge.bg, color: badge.txt, padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ background: badge.bg, color: badge.txt, padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, display: 'inline-block' }}>
                         {c.disponibilidad}
                       </span>
+                      {c.estadoViajeActual && c.disponibilidad === 'En Viaje' && (
+                        <div style={{ marginTop: 6, fontSize: 11, color: '#3FA9F5', fontWeight: 600 }}>
+                          ↳ {c.estadoViajeActual}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', gap: 8 }}>
