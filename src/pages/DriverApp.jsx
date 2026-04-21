@@ -8,6 +8,7 @@ export default function DriverApp() {
   const [chofer, setChofer] = useState(null)
   const [viajes, setViajes] = useState([])
   const [viajesBolsa, setViajesBolsa] = useState([])
+  const [expandedTripId, setExpandedTripId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -178,94 +179,150 @@ export default function DriverApp() {
         {viajes.length > 0 ? (
           <>
             <div style={{ textAlign: 'left', padding: '10px 0', marginTop: viajesBolsa.length > 0 ? 10 : 0 }}>
-              <div style={{ fontSize: 12, color: '#3FA9F5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Tu Agenda Personal</div>
-              <h2 style={{ color: 'white', fontSize: 18, margin: 0 }}>Tienes {viajes.length} servicios asignados</h2>
+              <div style={{ fontSize: 12, color: '#3FA9F5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Tu Agenda (Calendario)</div>
+              <h2 style={{ color: 'white', fontSize: 18, margin: 0 }}>{viajes.length} servicios asignados</h2>
             </div>
 
-            {viajes.map((activeTrip, index) => (
-              <div key={activeTrip.id} style={{ background: '#1A1F26', borderRadius: 16, border: index === 0 ? '2px solid #3FA9F5' : '1px solid #2A2F36', boxShadow: index === 0 ? '0 8px 30px rgba(63, 169, 245, 0.15)' : 'none', overflow: 'hidden', marginBottom: 20 }}>
-                <div style={{ background: index === 0 ? 'rgba(63, 169, 245, 0.1)' : '#151921', padding: '16px 20px', borderBottom: '1px solid rgba(63, 169, 245, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ color: '#E5E7EB', fontWeight: 600, fontSize: 13 }}>Estado Actual:</span>
-                    <div style={{ color: index === 0 ? '#3FA9F5' : '#9CA3AF', fontWeight: 800 }}>{activeTrip.estado}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>{activeTrip.fecha_programada ? new Date(activeTrip.fecha_programada).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : 'Inmediato'}</div>
-                  </div>
+            {Object.entries(
+              // Agrupar por día
+              viajes.reduce((acc, activeTrip) => {
+                let groupLabel = 'Servicios Inmediatos (Sin Fecha)'
+                if (activeTrip.fecha_programada) {
+                  const f = new Date(activeTrip.fecha_programada)
+                  const hoy = new Date()
+                  const manana = new Date(hoy)
+                  manana.setDate(manana.getDate() + 1)
+                  
+                  if (f.toDateString() === hoy.toDateString()) groupLabel = 'Hoy'
+                  else if (f.toDateString() === manana.toDateString()) groupLabel = 'Mañana'
+                  else groupLabel = f.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'short' })
+                }
+                if (!acc[groupLabel]) acc[groupLabel] = []
+                acc[groupLabel].push(activeTrip)
+                return acc
+              }, {})
+            ).map(([dayLabel, dayTrips]) => (
+              <div key={dayLabel} style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #2A2F36', paddingBottom: 8, marginBottom: 12 }}>
+                  📅 {dayLabel}
                 </div>
                 
-                <div style={{ padding: 20 }}>
-                  {/* ROUTES */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: 9, top: 18, bottom: 20, width: 2, background: '#2A2F36' }}></div>
-                    
-                    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#0B0F14', border: '3px solid #3FA9F5', zIndex: 2, flexShrink: 0, marginTop: 2 }}></div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 2 }}>ORIGEN (RECOGER AQUÍ)</div>
-                        <div style={{ color: 'white', fontSize: 15, fontWeight: 500 }}>{activeTrip.origen}</div>
-                      </div>
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {dayTrips.map((activeTrip, index) => {
+                    const isExpanded = expandedTripId === activeTrip.id
+                    // Solo el PRIMER viaje no ofrecido de toda la lista general ('viajes', no 'dayTrips') es el bloqueante
+                    // Pero ojo, un viaje Ofrecido la idea es que deben responder para que salga del Ofrecido
+                    const nextActiveTrip = viajes.find(v => v.estado !== 'Ofrecido') 
+                    const isActionable = activeTrip.estado === 'Ofrecido' || (nextActiveTrip && nextActiveTrip.id === activeTrip.id)
+                    // Si el viaje actual está En Curso/A Bordo, SIEMPRE lo pueden gestionar para destrabarse
+                    const isAlwaysActionable = ['En Curso', 'Pasajero a Bordo'].includes(activeTrip.estado)
+                    const canStart = isActionable || isAlwaysActionable
 
-                    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#0B0F14', border: '3px solid #EF4444', zIndex: 2, flexShrink: 0, marginTop: 2 }}></div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 2 }}>DESTINO (DEJAR AQUÍ)</div>
-                        <div style={{ color: 'white', fontSize: 15, fontWeight: 500 }}>{activeTrip.destino}</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* DETAILS */}
-                  <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px dashed #2A2F36', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#9CA3AF' }}>Cliente Pasajero</div>
-                      <div style={{ color: 'white', fontWeight: 600 }}>{activeTrip.nombre_pasajero || 'Corporativo'}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#9CA3AF' }}>Cobro a realizar</div>
-                      <div style={{ color: '#4ADE80', fontWeight: 600 }}>
-                        {activeTrip.quien_cobro === 'Chofer' ? `$${activeTrip.precio_estimado || 0} Efectivo` : 'NO COBRAR (Cta.Cte.)'}
-                      </div>
-                    </div>
-                  </div>
+                    return (
+                      <div key={activeTrip.id} style={{ background: '#1A1F26', borderRadius: 16, border: '1px solid #2A2F36', overflow: 'hidden' }}>
+                        
+                        {/* COMPACT HEADER (Tap to expand) */}
+                        <div 
+                          onClick={() => setExpandedTripId(isExpanded ? null : activeTrip.id)}
+                          style={{ background: isExpanded ? 'rgba(63, 169, 245, 0.1)' : '#151921', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                              <span style={{ fontSize: 13, color: '#4ADE80', fontWeight: 700 }}>{activeTrip.fecha_programada ? new Date(activeTrip.fecha_programada).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : 'ASAP'}</span>
+                              <span style={{ background: 'rgba(63, 169, 245, 0.1)', color: '#3FA9F5', padding: '2px 8px', borderRadius: 12, fontSize: 10, fontWeight: 700 }}>{activeTrip.estado}</span>
+                            </div>
+                            <div style={{ fontSize: 14, color: 'white', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>
+                              {activeTrip.origen.split(',')[0]} ➔ {activeTrip.destino.split(',')[0]}
+                            </div>
+                          </div>
+                          <div style={{ color: '#9CA3AF' }}>
+                             {isExpanded ? '▲' : '▼'}
+                          </div>
+                        </div>
+                        
+                        {/* EXPANDED DETAILS */}
+                        {isExpanded && (
+                          <div style={{ padding: 20, borderTop: '1px solid #2A2F36' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
+                              <div style={{ position: 'absolute', left: 9, top: 18, bottom: 20, width: 2, background: '#2A2F36' }}></div>
+                              
+                              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#0B0F14', border: '3px solid #3FA9F5', zIndex: 2, flexShrink: 0, marginTop: 2 }}></div>
+                                <div>
+                                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 2 }}>ORIGEN (RECOGER AQUÍ)</div>
+                                  <div style={{ color: 'white', fontSize: 15, fontWeight: 500 }}>{activeTrip.origen}</div>
+                                </div>
+                              </div>
 
-                  <a 
-                    href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeTrip.origen)}&destination=${encodeURIComponent(activeTrip.destino)}`}
-                    target="_blank" rel="noreferrer"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#2A2F36', color: 'white', padding: 12, borderRadius: 8, marginTop: 20, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}
-                  >
-                    <MapPin size={18} /> Abrir trayecto en GPS
-                  </a>
+                              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#0B0F14', border: '3px solid #EF4444', zIndex: 2, flexShrink: 0, marginTop: 2 }}></div>
+                                <div>
+                                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 2 }}>DESTINO (DEJAR AQUÍ)</div>
+                                  <div style={{ color: 'white', fontSize: 15, fontWeight: 500 }}>{activeTrip.destino}</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px dashed #2A2F36', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                              <div>
+                                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Pasajero / Cliente</div>
+                                <div style={{ color: 'white', fontWeight: 600 }}>{activeTrip.nombre_pasajero || 'Corporativo'}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Cobro a realizar</div>
+                                <div style={{ color: '#4ADE80', fontWeight: 600 }}>
+                                  {activeTrip.quien_cobro === 'Chofer' ? `$${activeTrip.precio_estimado || 0} Cash` : 'NO COBRAR (Cta.Cte.)'}
+                                </div>
+                              </div>
+                            </div>
 
-                  {/* ACTION BUTTONS */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginTop: 20 }}>
-                    {activeTrip.estado === 'Ofrecido' && (
-                      <div style={{ display: 'flex', gap: 12 }}>
-                        <button onClick={() => handleUpdateStatus(activeTrip.id, 'Pendiente')} style={{ flex: 1, background: '#10B981', color: 'white', border: 'none', padding: '14px 10px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                            <CheckCircle2 size={18}/> Aceptar Viaje
-                        </button>
-                        <button onClick={() => handleRechazar(activeTrip.id)} style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px 10px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                            ❌ Rechazar
-                        </button>
+                            <a 
+                              href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeTrip.origen)}&destination=${encodeURIComponent(activeTrip.destino)}`}
+                              target="_blank" rel="noreferrer"
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#2A2F36', color: 'white', padding: 12, borderRadius: 8, marginTop: 20, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}
+                            >
+                              📍 Abrir GPS de este trayecto
+                            </a>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginTop: 20 }}>
+                              {activeTrip.estado === 'Ofrecido' && (
+                                <div style={{ display: 'flex', gap: 12 }}>
+                                  <button onClick={() => handleUpdateStatus(activeTrip.id, 'Pendiente')} style={{ flex: 1, background: '#10B981', color: 'white', border: 'none', padding: '14px 10px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      ✅ Aceptar Viaje
+                                  </button>
+                                  <button onClick={() => handleRechazar(activeTrip.id)} style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px 10px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      ❌ Rechazar
+                                  </button>
+                                </div>
+                              )}
+                              
+                              {!canStart && activeTrip.estado === 'Pendiente' && (
+                                <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: 12, borderRadius: 8, fontSize: 12, textAlign: 'center', fontWeight: 600 }}>
+                                  🔒 Bloqueado: Tienes un viaje anterior que debes finalizar primero.
+                                </div>
+                              )}
+
+                              {canStart && activeTrip.estado === 'Pendiente' && (
+                                <button onClick={() => handleUpdateStatus(activeTrip.id, 'En Curso')} style={{ background: '#3FA9F5', color: 'white', border: 'none', padding: 16, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    🚙 Iniciar Viaje (Voy al Origen)
+                                </button>
+                              )}
+                              {activeTrip.estado === 'En Curso' && (
+                                <button onClick={() => handleUpdateStatus(activeTrip.id, 'Pasajero a Bordo')} style={{ background: '#F59E0B', color: 'white', border: 'none', padding: 16, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    👤 Pasajero a Bordo
+                                </button>
+                              )}
+                              {(activeTrip.estado === 'Pasajero a Bordo' || activeTrip.estado === 'En Curso') && (
+                                <button onClick={() => handleUpdateStatus(activeTrip.id, 'Finalizado')} style={{ background: '#10B981', color: 'white', border: 'none', padding: 16, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    ✅ Terminar Viaje Oficialmente
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {activeTrip.estado === 'Pendiente' && (
-                      <button onClick={() => handleUpdateStatus(activeTrip.id, 'En Curso')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: 18, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                          <Navigation size={18}/> Iniciar Viaje (Voy en camino)
-                      </button>
-                    )}
-                    {activeTrip.estado === 'En Curso' && (
-                      <button onClick={() => handleUpdateStatus(activeTrip.id, 'Pasajero a Bordo')} style={{ background: '#F59E0B', color: 'white', border: 'none', padding: 18, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                          🚙 Recogí al Pasajero
-                      </button>
-                    )}
-                    {(activeTrip.estado === 'Pasajero a Bordo' || activeTrip.estado === 'En Curso') && (
-                      <button onClick={() => handleUpdateStatus(activeTrip.id, 'Finalizado')} style={{ background: '#10B981', color: 'white', border: 'none', padding: 18, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                          <CheckCircle2 size={20}/> Terminar Viaje Oficialmente
-                      </button>
-                    )}
-                  </div>
+                    )
+                  })}
                 </div>
               </div>
             ))}
