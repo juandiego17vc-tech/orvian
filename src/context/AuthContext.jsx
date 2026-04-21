@@ -6,11 +6,15 @@ const AuthContext = createContext({})
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [tenantId, setTenantId] = useState(null)
+  const [rol, setRol] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const fetchTenantId = async (userId) => {
-    const { data } = await supabase.from('usuarios_tenant').select('tenant_id').eq('id', userId).single()
-    if (data) setTenantId(data.tenant_id)
+    const { data } = await supabase.from('usuarios_tenant').select('tenant_id, rol').eq('id', userId).single()
+    if (data) {
+      setTenantId(data.tenant_id)
+      setRol(data.rol)
+    }
     setLoading(false)
   }
 
@@ -25,6 +29,7 @@ export function AuthProvider({ children }) {
       if (session) fetchTenantId(session.user.id)
       else {
         setTenantId(null)
+        setRol(null)
         setLoading(false)
       }
     })
@@ -34,12 +39,18 @@ export function AuthProvider({ children }) {
   const value = {
     session,
     tenantId,
+    rol,
     loading,
+    signUp: (email, password) => supabase.auth.signUp({ email, password }),
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signOut: () => {
       setTenantId(null)
+      setRol(null)
       return supabase.auth.signOut()
     },
+    reloadTenant: () => {
+      if (session) fetchTenantId(session.user.id)
+    }
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

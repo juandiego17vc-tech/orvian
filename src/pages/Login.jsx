@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Eye, EyeOff } from 'lucide-react'
 
@@ -83,6 +83,13 @@ export default function Login() {
           >
             {loading ? 'Ingresando...' : 'Ingresar'}
           </button>
+          
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#6B7280' }}>
+            ¿Eres dueño de una agencia?{' '}
+            <Link to="/register" style={{ color: '#3FA9F5', textDecoration: 'none', fontWeight: 600 }}>
+              Crea tu cuenta aquí
+            </Link>
+          </div>
         </form>
       </div>
     </div>

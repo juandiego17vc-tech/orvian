@@ -3,6 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import AppLayout from './components/layout/AppLayout'
 import Login from './pages/Login'
+import Register from './pages/Register'
+import Join from './pages/Join'
+import DriverApp from './pages/DriverApp'
 import Dashboard from './pages/Dashboard'
 import Viajes from './pages/Viajes'
 import Clientes from './pages/Clientes'
@@ -17,9 +20,11 @@ import Proveedores from './pages/Proveedores'
 const queryClient = new QueryClient()
 
 function PrivateRoute({ children }) {
-  const { session, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center h-screen bg-bg text-white">Cargando...</div>
-  return session ? children : <Navigate to="/login" />
+  const { session, loading, tenantId } = useAuth()
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0B0F14', color: '#3fa9f5' }}>Cargando Espacio de Trabajo...</div>
+  if (!session) return <Navigate to="/login" />
+  if (session && !tenantId) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0B0F14', color: '#E5E7EB' }}>Sincronizando Base de Datos...</div>
+  return children
 }
 
 export default function App() {
@@ -29,6 +34,9 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/join" element={<Join />} />
+            <Route path="/driver/:id" element={<DriverApp />} />
             <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="viajes" element={<Viajes />} />

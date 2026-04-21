@@ -5,17 +5,19 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: '⬡' },
   { to: '/viajes', label: 'Viajes', icon: '↗' },
   { to: '/tarifario', label: 'Tarifario', icon: '☰' },
-  { to: '/liquidaciones', label: 'Nómina', icon: '◫' },
+  { to: '/liquidaciones', label: 'Nómina', icon: '◫', adminOnly: true },
   { to: '/choferes', label: 'Choferes', icon: '◈' },
   { to: '/clientes', label: 'Clientes', icon: '◎' },
-  { to: '/proveedores', label: 'Bóveda B2B', icon: '◫' },
-  { to: '/finanzas', label: 'Reportes', icon: '◫' },
-  { to: '/configuracion', label: 'Configuración', icon: '◻' },
+  { to: '/proveedores', label: 'Bóveda B2B', icon: '◫', adminOnly: true },
+  { to: '/finanzas', label: 'Reportes', icon: '◫', adminOnly: true },
+  { to: '/configuracion', label: 'Configuración', icon: '◻', adminOnly: true },
 ]
 
 export default function AppLayout() {
-  const { signOut } = useAuth()
+  const { signOut, rol } = useAuth()
   const navigate = useNavigate()
+  
+  const visibleNavItems = navItems.filter(item => !item.adminOnly || rol === 'Admin')
 
   const handleSignOut = async () => {
     await signOut()
@@ -41,7 +43,7 @@ export default function AppLayout() {
         {/* NAV */}
         <nav style={{ padding: '16px 12px', flex: 1 }}>
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B7280', padding: '0 6px', marginBottom: 4 }}>Principal</div>
-          {navItems.map(item => (
+          {visibleNavItems.map(item => (
             <NavLink
               key={item.to}
               to={item.to}

@@ -126,3 +126,60 @@ CREATE POLICY "Aislamiento: pagos" ON pagos FOR ALL USING (tenant_id = current_t
 CREATE POLICY "Aislamiento: encuestas" ON encuestas FOR ALL USING (tenant_id = current_tenant_id());
 CREATE POLICY "Aislamiento: alertas" ON alertas FOR ALL USING (tenant_id = current_tenant_id());
 CREATE POLICY "Aislamiento: tenants" ON tenants FOR SELECT USING (id = current_tenant_id());
+
+-- ========================================================
+-- 4. ONBOARDING (Bypass RLS para nuevos clientes)
+-- ========================================================
+-- Esta función permite a la UI crear el Tenant justo al registrar al usuario
+CREATE OR REPLACE FUNCTION crear_mi_agencia(p_nombre_empresa TEXT)
+RETURNS UUID AS $$
+DECLARE
+  v_tenant_id UUID;
+BEGIN
+  -- Insertamos la nueva empresa (Agencia)
+  INSERT INTO public.tenants (nombre_empresa, suscripcion_plan)
+  VALUES (p_nombre_empresa, 'Starter')
+  RETURNING id INTO v_tenant_id;
+
+  -- Asociamos al usuario (que llamó la función) con esta agencia como Admin
+  INSERT INTO public.usuarios_tenant (id, tenant_id, rol)
+  VALUES (auth.uid(), v_tenant_id, 'Admin');
+
+  RETURN v_tenant_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ========================================================
+-- 5. ONBOARDING EMPLEADOS (Bypass RLS para Operadores)
+-- ========================================================
+CREATE OR REPLACE FUNCTION unirse_agencia(p_tenant_id UUID)
+RETURNS void AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.tenants WHERE id = p_tenant_id) THEN
+    INSERT INTO public.usuarios_tenant (id, tenant_id, rol)
+    VALUES (auth.uid(), p_tenant_id, 'Operador');
+  ELSE
+    RAISE EXCEPTION 'Código de Agencia inválido';
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ========================================================
+-- 6. PWA CHOFERES (Magic Links)
+-- ========================================================
+CREATE OR REPLACE FUNCTION rpc_get_chofer(p_id UUID)
+RETURNS SETOF public.choferes AS $$
+  SELECT * FROM public.choferes WHERE id = p_id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION rpc_get_viajes_chofer(p_chofer_id UUID)
+RETURNS SETOF public.viajes AS $$
+  SELECT * FROM public.viajes WHERE chofer_id = p_chofer_id AND estado != 'Finalizado' ORDER BY created_at DESC;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION rpc_update_viaje_estado(p_viaje_id UUID, p_estado TEXT)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.viajes SET estado = p_estado WHERE id = p_viaje_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Check, X, CarFront, Hash, Info, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Check, X, CarFront, Hash, Info, Edit2, Trash2, Smartphone } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -183,6 +183,15 @@ export default function Choferes() {
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', gap: 8 }}>
+                        <button 
+                          title="Copiar Link de Conductor" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/driver/${c.id}`)
+                            alert('Link de Conductor copiado al portapapeles. Envíaselo por WhatsApp.')
+                          }} 
+                          style={{ background: 'transparent', border: '1px solid #3FA9F5', borderRadius: 6, padding: '6px', cursor: 'pointer', color: '#3FA9F5' }}>
+                          <Smartphone size={14} />
+                        </button>
                         <button onClick={() => handleOpenForm(c)} style={{ background: 'transparent', border: '1px solid #2A2F36', borderRadius: 6, padding: '6px', cursor: 'pointer', color: '#9CA3AF' }}>
                           <Edit2 size={14} />
                         </button>
