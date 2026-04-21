@@ -427,13 +427,15 @@ export default function Viajes() {
                       </td>
                       <td style={{ padding: '14px 16px' }}>
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                          <button 
-                            onClick={() => handleWhatsApp(v)}
-                            title="Notificar Cliente"
-                            style={{ background: '#0B0F14', color: '#22C55E', border: '1px solid #166534', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                          >
-                            <User size={14} /> 
-                          </button>
+                          {v.estado !== 'Finalizado' && v.estado !== 'Cancelado' && v.estado !== 'Liquidado' && (
+                            <button 
+                              onClick={() => handleWhatsApp(v)}
+                              title="Notificar Cliente"
+                              style={{ background: '#0B0F14', color: '#22C55E', border: '1px solid #166534', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            >
+                              <User size={14} /> 
+                            </button>
+                          )}
                           
                           {v.estado === 'Finalizado' && (
                             <button 
@@ -445,7 +447,7 @@ export default function Viajes() {
                             </button>
                           )}
                           
-                          {v.chofer_id && (
+                          {v.chofer_id && v.estado !== 'Finalizado' && v.estado !== 'Cancelado' && v.estado !== 'Liquidado' && (
                             <button 
                               onClick={() => handleWhatsAppChofer(v)}
                               title="Enviar Viaje al Chofer por WhatsApp"
