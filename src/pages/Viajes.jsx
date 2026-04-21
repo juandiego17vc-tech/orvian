@@ -483,7 +483,7 @@ export default function Viajes() {
                    </div>
                    
                    {modoCliente === 'existente' && clientesList.length > 0 ? (
-                      <div style={{ position: 'relative' }}>
+                      <div style={{ position: 'relative', zIndex: 105 }}>
                         <input 
                           type="text" 
                           required 
