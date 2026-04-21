@@ -387,13 +387,13 @@ export default function DriverApp() {
                                 </div>
                               )}
                               
-                              {!canStart && activeTrip.estado === 'Pendiente' && (
+                              {!canStart && (activeTrip.estado === 'Pendiente' || activeTrip.estado === 'Asignado') && (
                                 <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: 12, borderRadius: 8, fontSize: 12, textAlign: 'center', fontWeight: 600 }}>
                                   🔒 Bloqueado: Tienes un viaje anterior que debes finalizar primero.
                                 </div>
                               )}
 
-                              {canStart && activeTrip.estado === 'Pendiente' && (
+                              {canStart && (activeTrip.estado === 'Pendiente' || activeTrip.estado === 'Asignado') && (
                                 <button onClick={() => handleUpdateStatus(activeTrip.id, 'En Curso')} style={{ background: '#3FA9F5', color: 'white', border: 'none', padding: 16, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     🚙 Iniciar Viaje (Voy al Origen)
                                 </button>
