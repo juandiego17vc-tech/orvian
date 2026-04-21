@@ -15,6 +15,7 @@ export default function Clientes() {
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [segmento, setSegmento] = useState('Nuevo')
+  const [preferencias, setPreferencias] = useState('')
 
   useEffect(() => {
     if (tenantId) fetchClientes()
@@ -24,10 +25,34 @@ export default function Clientes() {
     setLoading(true)
     const { data, error } = await supabase
       .from('clientes')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .select('*, viajes(origen, destino, estado)')
     
-    if (data) setClientes(data)
+    if (data) {
+      // Calcular Viajes y Rutas, y Ordenar
+      const enriched = data.map(c => {
+        const totalViajes = c.viajes ? c.viajes.filter(v => v.estado !== 'Cancelado').length : 0
+        
+        let rutaPrincipal = 'Sin historial'
+        if (c.viajes && c.viajes.length > 0) {
+          const rutasFreq = {}
+          c.viajes.forEach(v => {
+            if(v.origen && v.destino) {
+              const r = `${v.origen.split(',')[0]} ➔ ${v.destino.split(',')[0]}`
+              rutasFreq[r] = (rutasFreq[r] || 0) + 1
+            }
+          })
+          if(Object.keys(rutasFreq).length > 0) {
+            rutaPrincipal = Object.keys(rutasFreq).reduce((a, b) => rutasFreq[a] > rutasFreq[b] ? a : b)
+          }
+        }
+        
+        return { ...c, totalViajes, rutaPrincipal }
+      })
+
+      // Ordenar por más viajes a menos viajes
+      enriched.sort((a, b) => b.totalViajes - a.totalViajes)
+      setClientes(enriched)
+    }
     setLoading(false)
   }
 
@@ -37,11 +62,13 @@ export default function Clientes() {
       setNombre(cliente.nombre_completo)
       setTelefono(cliente.telefono || '')
       setSegmento(cliente.segmento || 'Nuevo')
+      setPreferencias(cliente.preferencias || '')
     } else {
       setClienteEditando(null)
       setNombre('')
       setTelefono('')
       setSegmento('Nuevo')
+      setPreferencias('')
     }
     setIsModalOpen(true)
   }
@@ -59,7 +86,8 @@ export default function Clientes() {
           .update({
             nombre_completo: nombre,
             telefono: telefono || null,
-            segmento: segmento
+            segmento: segmento,
+            preferencias: preferencias || null
           })
           .eq('id', clienteEditando.id)
         if (error) throw error
@@ -71,7 +99,8 @@ export default function Clientes() {
             tenant_id: tenantId,
             nombre_completo: nombre,
             telefono: telefono || null,
-            segmento: segmento
+            segmento: segmento,
+            preferencias: preferencias || null
           }])
         if (error) throw error
       }
@@ -135,7 +164,8 @@ export default function Clientes() {
             <thead>
               <tr style={{ background: '#151921', borderBottom: '1px solid #2A2F36', color: '#9CA3AF' }}>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Nombre Completo</th>
-                <th style={{ padding: '14px 16px', fontWeight: 500 }}>Teléfono</th>
+                <th style={{ padding: '14px 16px', fontWeight: 500 }}>Viajes</th>
+                <th style={{ padding: '14px 16px', fontWeight: 500 }}>Ruta Frecuente</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Segmento</th>
                 <th style={{ padding: '14px 16px', fontWeight: 500 }}>Acciones</th>
               </tr>
@@ -150,10 +180,18 @@ export default function Clientes() {
                         <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#21272F', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', fontSize: 12 }}>
                           {c.nombre_completo.charAt(0).toUpperCase()}
                         </div>
-                        {c.nombre_completo}
+                        <div>
+                          <div>{c.nombre_completo}</div>
+                          <div style={{ fontSize: 11, color: '#9CA3AF' }}>{c.telefono || 'Sin celular'}</div>
+                        </div>
                       </div>
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#9CA3AF' }}>{c.telefono || 'Sin teléfono'}</td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{ fontWeight: 700, color: '#E5E7EB' }}>{c.totalViajes}</span> <span style={{ color: '#6B7280', fontSize: 11 }}>viajes</span>
+                    </td>
+                    <td style={{ padding: '14px 16px', color: '#9CA3AF', fontSize: 11, maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {c.rutaPrincipal}
+                    </td>
                     <td style={{ padding: '14px 16px' }}>
                       <span style={{ background: badge.bg, color: badge.txt, padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
                         {c.segmento}
@@ -228,7 +266,7 @@ export default function Clientes() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>Segmento Comercial</label>
                 <div style={{ position: 'relative' }}>
                   <Tag size={16} color="#9CA3AF" style={{ position: 'absolute', left: 10, top: 12 }} />
@@ -242,6 +280,16 @@ export default function Clientes() {
                     <option value="Riesgo">Riesgo (Problemas de pago previos)</option>
                   </select>
                 </div>
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ display: 'block', fontSize: 12, color: '#3FA9F5', marginBottom: 6, fontWeight: 600 }}>🌟 Preferencias y Mañas del Pasajero (Info para el Chofer)</label>
+                <textarea 
+                  value={preferencias} onChange={e => setPreferencias(e.target.value)}
+                  placeholder="Ej. Le gusta el aire fuerte, escuchar Jazz, o no hablar durante el trayecto..."
+                  rows="3"
+                  style={{ width: '100%', background: '#0B0F14', border: '1px solid #3FA9F5', borderRadius: 6, padding: '10px 12px', color: '#E5E7EB', outline: 'none', resize: 'vertical' }}
+                />
               </div>
 
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', borderTop: '1px solid #2A2F36', paddingTop: 16 }}>

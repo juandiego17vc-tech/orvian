@@ -91,7 +91,7 @@ export default function Viajes() {
       .from('viajes')
       .select(`
         *,
-        clientes(nombre_completo, telefono),
+        clientes(nombre_completo, telefono, preferencias),
         choferes(nombre_completo, vehiculo_placa, telefono),
         proveedores(nombre_fantasia)
       `)
@@ -263,7 +263,14 @@ export default function Viajes() {
     let mensaje = `¡Hola *${viaje.choferes?.nombre_completo}*! Tienes una nueva OFERTA de viaje.\n\n`
     mensaje += `📍 *Origen:* ${viaje.origen}\n`
     if (viaje.destino) mensaje += `🏁 *Destino:* ${viaje.destino}\n`
-    mensaje += `👤 *Pasajero:* ${viaje.nombre_pasajero || viaje.clientes?.nombre_completo || 'Corporativo'}\n\n`
+    mensaje += `👤 *Pasajero:* ${viaje.nombre_pasajero || viaje.clientes?.nombre_completo || 'Corporativo'}\n`
+    
+    if (viaje.clientes?.preferencias) {
+      mensaje += `\nℹ️ *PREFERENCIAS DEL PASAJERO:*\n_${viaje.clientes.preferencias}_\n\n`
+    } else {
+      mensaje += `\n`
+    }
+
     mensaje += `👉 *TOCA AQUÍ para ver tu agenda y ACEPTAR el viaje:* ${window.location.origin}/driver/${viaje.chofer_id}`
 
     const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`

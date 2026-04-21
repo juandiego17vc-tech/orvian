@@ -300,13 +300,31 @@ export default function DriverApp() {
                               </div>
                             </div>
 
-                            <a 
-                              href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeTrip.origen)}&destination=${encodeURIComponent(activeTrip.destino)}`}
-                              target="_blank" rel="noreferrer"
-                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#2A2F36', color: 'white', padding: 12, borderRadius: 8, marginTop: 20, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}
-                            >
-                              📍 Abrir GPS de este trayecto
-                            </a>
+                            {(() => {
+                              let gpsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeTrip.origen)}&destination=${encodeURIComponent(activeTrip.destino)}`;
+                              let gpsText = "📍 Ver Ruta en Mapa";
+                              let btnColor = '#2A2F36';
+                              
+                              if (activeTrip.estado === 'En Curso') {
+                                gpsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(activeTrip.origen)}`;
+                                gpsText = "📍 Navegar a Buscar Pasajero";
+                                btnColor = '#3FA9F5';
+                              } else if (activeTrip.estado === 'Pasajero a Bordo') {
+                                gpsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeTrip.origen)}&destination=${encodeURIComponent(activeTrip.destino)}`;
+                                gpsText = "📍 Navegar al Destino Final";
+                                btnColor = '#F59E0B';
+                              }
+
+                              return (
+                                <a 
+                                  href={gpsUrl}
+                                  target="_blank" rel="noreferrer"
+                                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: btnColor, color: 'white', padding: 14, borderRadius: 8, marginTop: 20, textDecoration: 'none', fontWeight: 700, fontSize: 14, border: 'none' }}
+                                >
+                                  {gpsText}
+                                </a>
+                              )
+                            })()}
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginTop: 20 }}>
                               {activeTrip.estado === 'Ofrecido' && (
