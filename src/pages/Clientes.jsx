@@ -46,7 +46,18 @@ export default function Clientes() {
           }
         }
         
-        return { ...c, totalViajes, rutaPrincipal }
+        let dynamicSegmento = c.segmento;
+        if (dynamicSegmento !== 'VIP' && dynamicSegmento !== 'Riesgo') {
+          if (totalViajes >= 5) {
+            dynamicSegmento = 'Frecuente';
+          } else if (totalViajes >= 2) {
+            dynamicSegmento = 'Recurrente';
+          } else {
+            dynamicSegmento = 'Nuevo';
+          }
+        }
+        
+        return { ...c, totalViajes, rutaPrincipal, segmentoVisual: dynamicSegmento }
       })
 
       // Ordenar por más viajes a menos viajes
@@ -131,6 +142,7 @@ export default function Clientes() {
     const colors = {
       'VIP': { bg: 'rgba(139, 92, 246, 0.15)', txt: '#A78BFA' }, // Morado
       'Frecuente': { bg: 'rgba(56, 189, 248, 0.15)', txt: '#38BDF8' }, // Celeste
+      'Recurrente': { bg: 'rgba(245, 158, 11, 0.15)', txt: '#F59E0B' }, // Ambar
       'Nuevo': { bg: 'rgba(34, 197, 94, 0.15)', txt: '#4ADE80' }, // Verde
       'Riesgo': { bg: 'rgba(239, 68, 68, 0.15)', txt: '#F87171' } // Rojo
     }
@@ -172,7 +184,7 @@ export default function Clientes() {
             </thead>
             <tbody>
               {clientes.map((c) => {
-                const badge = getSegmentoColor(c.segmento)
+                const badge = getSegmentoColor(c.segmentoVisual)
                 return (
                   <tr key={c.id} style={{ borderBottom: '1px solid #2A2F36', color: '#E5E7EB' }}>
                     <td style={{ padding: '14px 16px', fontWeight: 500 }}>
@@ -194,7 +206,7 @@ export default function Clientes() {
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <span style={{ background: badge.bg, color: badge.txt, padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
-                        {c.segmento}
+                        {c.segmentoVisual}
                       </span>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
@@ -274,10 +286,11 @@ export default function Clientes() {
                     value={segmento} onChange={e => setSegmento(e.target.value)}
                     style={{ width: '100%', background: '#0B0F14', border: '1px solid #2A2F36', borderRadius: 6, padding: '10px 12px 10px 32px', color: '#E5E7EB', outline: 'none', appearance: 'none' }}
                   >
-                    <option value="Nuevo">Nuevo (Primer viaje)</option>
+                    <option value="Nuevo">Nuevo (0-1 Viajes)</option>
+                    <option value="Recurrente">Recurrente (2 a 4 Viajes)</option>
                     <option value="Frecuente">Frecuente (Más de 5 viajes)</option>
-                    <option value="VIP">VIP (Corporativo o de alto valor)</option>
-                    <option value="Riesgo">Riesgo (Problemas de pago previos)</option>
+                    <option value="VIP">VIP (Corporativo / Alto valor)</option>
+                    <option value="Riesgo">Riesgo (Problemas de pago)</option>
                   </select>
                 </div>
               </div>
