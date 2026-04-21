@@ -63,6 +63,7 @@ export default function Choferes() {
         // Determinar estado del viaje activo
         const activeTrip = c.viajes?.find(v => v.estado === 'En Curso' || v.estado === 'Pasajero a Bordo' || v.estado === 'Pendiente');
         c.estadoViajeActual = activeTrip ? activeTrip.estado : null;
+        c.idViajeActual = activeTrip ? activeTrip.id : null;
         
         c.rating = count > 0 ? (totalScore / count).toFixed(1) : 'S/N';
         c.ratingCount = count;
@@ -72,6 +73,25 @@ export default function Choferes() {
       setChoferes(enriched)
     }
     setLoading(false)
+  }
+
+  const handleUpdateViajeEstado = async (choferId, viajeId, nuevoEstado) => {
+    try {
+      if (!window.confirm(`¿Forzar el estado del viaje activo a "${nuevoEstado}"?`)) return;
+      
+      const { error } = await supabase.from('viajes').update({ estado: nuevoEstado, validacion_precio_manual: false }).eq('id', viajeId)
+      if (error) throw error
+      
+      if (nuevoEstado === 'Finalizado' || nuevoEstado === 'Cancelado') {
+        const { error: errChofer } = await supabase.from('choferes').update({ disponibilidad: 'Disponible' }).eq('id', choferId)
+        if (errChofer) throw errChofer
+      }
+      
+      fetchChoferes()
+    } catch (err) {
+      console.error(err)
+      alert("Error al forzar el estado del viaje.")
+    }
   }
 
   const handleOpenForm = (chofer = null) => {
@@ -240,8 +260,19 @@ export default function Choferes() {
                         {c.disponibilidad}
                       </span>
                       {c.estadoViajeActual && c.disponibilidad === 'En Viaje' && (
-                        <div style={{ marginTop: 6, fontSize: 11, color: '#3FA9F5', fontWeight: 600 }}>
-                          ↳ {c.estadoViajeActual}
+                        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ color: '#3FA9F5', fontWeight: 700 }}>↳</span>
+                          <select 
+                            value={c.estadoViajeActual}
+                            onChange={(e) => handleUpdateViajeEstado(c.id, c.idViajeActual, e.target.value)}
+                            style={{ background: 'rgba(63, 169, 245, 0.1)', color: '#3FA9F5', border: '1px solid rgba(63, 169, 245, 0.3)', borderRadius: 4, padding: '2px 4px', fontSize: 11, fontWeight: 600, outline: 'none', cursor: 'pointer' }}
+                          >
+                            <option value="Pendiente">Pendiente (Yendo)</option>
+                            <option value="En Curso">En Curso</option>
+                            <option value="Pasajero a Bordo">Pasajero a Bordo</option>
+                            <option value="Finalizado">🟢 Finalizar Viaje</option>
+                            <option value="Cancelado">🔴 Cancelar Viaje</option>
+                          </select>
                         </div>
                       )}
                     </td>
